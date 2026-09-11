@@ -1,0 +1,14 @@
+{
+  "KPlugin": {
+    "Category": "Application Launchers",
+    "Description": "An independent, reorderable, optionally tabbed application launcher for Plasma",
+    "EnabledByDefault": true,
+    "Icon": "fork",
+    "Id": "io.github.suppdiff.appcouplingplus",
+    "License": "GPL-3.0-or-later",
+    "Name": "App Coupling+",
+    "Version": "1.0.0"
+  },
+  "KPackageStructure": "Plasma/Applet",
+  "X-Plasma-API-Minimum-Version": "6.0"
+}
