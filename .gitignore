@@ -1,1 +1,4 @@
-/build/
+/pkg/
+/src/
+*.pkg.tar.*
+*.tar.gz

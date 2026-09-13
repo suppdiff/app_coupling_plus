@@ -1,0 +1,22 @@
+pkgbase = plasma6-applets-app-coupling-plus
+	pkgdesc = Configurable KDE Plasma 6 application launcher widget with tabs and independent launcher groups
+	pkgver = 1.0.2
+	pkgrel = 1
+	url = https://github.com/suppdiff/app_coupling_plus
+	arch = x86_64
+	license = GPL-3.0-or-later
+	makedepends = cmake
+	makedepends = extra-cmake-modules
+	depends = kconfig
+	depends = kcoreaddons
+	depends = kdeclarative
+	depends = kio
+	depends = kirigami
+	depends = kservice
+	depends = libplasma
+	depends = qt6-base
+	depends = qt6-declarative
+	source = plasma6-applets-app-coupling-plus-1.0.2.tar.gz::https://github.com/suppdiff/app_coupling_plus/archive/refs/tags/v1.0.2.tar.gz
+	sha256sums = afa4e39b19d02965c19594bf10cd01290a2ff07a8c2a095278713825bb4a3004
+
+pkgname = plasma6-applets-app-coupling-plus
