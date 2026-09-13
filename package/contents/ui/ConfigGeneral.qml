@@ -28,6 +28,8 @@ QQC2.ScrollView {
     property alias cfg_iconSize: iconSize.value
     property alias cfg_horizontalSpacing: horizontalSpacing.value
     property alias cfg_verticalSpacing: verticalSpacing.value
+    property alias cfg_launcherAlignment: launcherAlignment.currentIndex
+    property alias cfg_crossAlignment: crossAlignment.currentIndex
     property alias cfg_lengthMode: lengthMode.currentIndex
     property alias cfg_fixedLength: fixedLength.value
     property alias cfg_automaticMaxLength: automaticMaxLength.value
@@ -100,6 +102,27 @@ QQC2.ScrollView {
                 const n = parseInt(text);
                 return isNaN(n) ? value : n;
             }
+        }
+
+        QQC2.ComboBox {
+            id: launcherAlignment
+            Kirigami.FormData.label: page.verticalPanel
+                ? i18n("Vertical alignment:")
+                : i18n("Horizontal alignment:")
+            enabled: !page.inPanel || lengthMode.currentIndex !== 0
+            model: page.verticalPanel
+                ? [i18n("Top"), i18n("Center"), i18n("Bottom")]
+                : [i18n("Left"), i18n("Center"), i18n("Right")]
+        }
+
+        QQC2.ComboBox {
+            id: crossAlignment
+            Kirigami.FormData.label: page.verticalPanel
+                ? i18n("Horizontal alignment:")
+                : i18n("Vertical alignment:")
+            model: page.verticalPanel
+                ? [i18n("Left"), i18n("Center"), i18n("Right")]
+                : [i18n("Top"), i18n("Center"), i18n("Bottom")]
         }
 
         Kirigami.Separator {

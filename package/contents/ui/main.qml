@@ -35,6 +35,10 @@ PlasmoidItem {
     readonly property int crossCellExtent: horizontalLayout ? cellHeight : cellWidth
     readonly property int primarySpacing: horizontalLayout ? horizontalSpacing : verticalSpacing
     readonly property int crossSpacing: horizontalLayout ? verticalSpacing : horizontalSpacing
+    // Alignment is independent on the launcher (primary) and cross axes.
+    // 0 = start, 1 = center, 2 = end.
+    readonly property int primaryLauncherAlignment: Math.max(0, Math.min(2, Plasmoid.configuration.launcherAlignment))
+    readonly property int crossLauncherAlignment: Math.max(0, Math.min(2, Plasmoid.configuration.crossAlignment))
 
     // Along-panel sizing: automatic (capped), fixed pixels, or fill leftover panel space.
     readonly property int lengthMode: Math.max(0, Math.min(2, Plasmoid.configuration.lengthMode))
@@ -134,6 +138,17 @@ PlasmoidItem {
     readonly property bool hasOverflow: launcherModel.count > pageCapacity
     readonly property int hiddenCount: Math.max(0, launcherModel.count - pageCapacity)
     readonly property int pagePixelExtent: visiblePrimarySlots * primaryCellExtent
+    readonly property int usedPrimarySlots: Math.max(1, Math.ceil(launcherModel.count / visibleCrossSlots))
+    readonly property int usedPrimaryExtent: Math.min(gridPrimaryExtent, extentForSlots(usedPrimarySlots, primarySpacing))
+    readonly property int alignedGridPrimaryExtent: hasOverflow ? gridPrimaryExtent : usedPrimaryExtent
+    readonly property int primaryAlignmentSlack: Math.max(0, gridPrimaryExtent - alignedGridPrimaryExtent)
+    readonly property int primaryAlignmentOffset: primaryLauncherAlignment === 1
+        ? Math.round(primaryAlignmentSlack / 2)
+        : (primaryLauncherAlignment === 2 ? primaryAlignmentSlack : 0)
+    readonly property int crossAlignmentSlack: Math.max(0, Math.floor(contentCrossAvailable - crossGridExtent))
+    readonly property int crossAlignmentOffset: crossLauncherAlignment === 1
+        ? Math.round(crossAlignmentSlack / 2)
+        : (crossLauncherAlignment === 2 ? crossAlignmentSlack : 0)
 
     property int pageIndex: 0
     property bool dragging: false
@@ -537,13 +552,14 @@ PlasmoidItem {
         GridView {
             id: grid
 
-            x: root.launcherX + (root.horizontalLayout ? root.leadingReserve : Math.round((root.launcherWidth - width) / 2))
-            // Desktop launcher grids are anchored to the top rather than vertically centered.
+            x: root.launcherX + (root.horizontalLayout
+                ? root.leadingReserve + root.primaryAlignmentOffset
+                : root.crossAlignmentOffset)
             y: root.launcherY + (root.horizontalLayout
-                ? (root.inPanel ? Math.round((root.launcherHeight - height) / 2) : 0)
-                : root.leadingReserve)
-            width: root.horizontalLayout ? root.gridPrimaryExtent : root.crossGridExtent
-            height: root.horizontalLayout ? root.crossGridExtent : root.gridPrimaryExtent
+                ? root.crossAlignmentOffset
+                : root.leadingReserve + root.primaryAlignmentOffset)
+            width: root.horizontalLayout ? root.alignedGridPrimaryExtent : root.crossGridExtent
+            height: root.horizontalLayout ? root.crossGridExtent : root.alignedGridPrimaryExtent
 
             interactive: root.overflowMode === 2
             clip: true
@@ -779,8 +795,25 @@ PlasmoidItem {
 
         Item {
             id: emptyItem
-            x: root.inPanel ? root.launcherX + Math.round((root.launcherWidth - width) / 2) : root.launcherX
-            y: root.inPanel ? root.launcherY + Math.round((root.launcherHeight - height) / 2) : root.launcherY
+            readonly property real emptyPrimarySlack: Math.max(0,
+                (root.horizontalLayout ? root.launcherWidth : root.launcherHeight) -
+                (root.horizontalLayout ? width : height))
+            readonly property real emptyPrimaryOffset: root.primaryLauncherAlignment === 1
+                ? Math.round(emptyPrimarySlack / 2)
+                : (root.primaryLauncherAlignment === 2 ? emptyPrimarySlack : 0)
+            readonly property real emptyCrossSlack: Math.max(0,
+                (root.horizontalLayout ? root.launcherHeight : root.launcherWidth) -
+                (root.horizontalLayout ? height : width))
+            readonly property real emptyCrossOffset: root.crossLauncherAlignment === 1
+                ? Math.round(emptyCrossSlack / 2)
+                : (root.crossLauncherAlignment === 2 ? emptyCrossSlack : 0)
+
+            x: root.horizontalLayout
+                ? root.launcherX + emptyPrimaryOffset
+                : root.launcherX + emptyCrossOffset
+            y: root.horizontalLayout
+                ? root.launcherY + emptyCrossOffset
+                : root.launcherY + emptyPrimaryOffset
             width: Math.min(root.launcherWidth, root.requestedIconSize)
             height: Math.min(root.launcherHeight, root.requestedIconSize)
             visible: launcherModel.count === 0

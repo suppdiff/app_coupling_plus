@@ -21,6 +21,12 @@
     <entry name="verticalSpacing" type="Int">
       <default>2</default>
     </entry>
+    <entry name="launcherAlignment" type="Int">
+      <default>0</default>
+    </entry>
+    <entry name="crossAlignment" type="Int">
+      <default>0</default>
+    </entry>
     <entry name="lengthMode" type="Int">
       <default>0</default>
     </entry>
