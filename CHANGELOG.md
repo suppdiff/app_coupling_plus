@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3 - 2026-09-14
+
+- Improved local installer cleanup of stale QML module paths from previous development installations.
+- Removed unused internal QML properties, functions, and IDs.
+
 ## 1.0.2 - 2026-09-13
 
 - Improved local development install and uninstall cleanup.

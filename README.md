@@ -107,13 +107,13 @@ For panels, Plasma controls the panel thickness while App Coupling+ controls its
 
 ## Uninstall
 
-If App Coupling+ was installed with `install-local.sh`, run the matching uninstaller from the same source/build tree:
+If App Coupling+ was installed with `install-local.sh`, run the matching uninstaller from the source tree:
 
 ```bash
 ./uninstall-local.sh
 ```
 
-The uninstaller only removes App Coupling+ files recorded by that build and its own environment entry. Restart Plasma afterward if the widget was loaded.
+The uninstaller removes the user-local App Coupling+ plasmoid, its QML module, and its managed environment entry. It leaves Plasma widget configuration and any pacman-managed system package untouched. Restart Plasma afterward if the widget was loaded.
 
 ## Security and privacy
 

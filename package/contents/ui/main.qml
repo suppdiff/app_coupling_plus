@@ -32,7 +32,6 @@ PlasmoidItem {
     readonly property int cellWidth: requestedIconSize + horizontalSpacing
     readonly property int cellHeight: requestedIconSize + verticalSpacing
     readonly property int primaryCellExtent: horizontalLayout ? cellWidth : cellHeight
-    readonly property int crossCellExtent: horizontalLayout ? cellHeight : cellWidth
     readonly property int primarySpacing: horizontalLayout ? horizontalSpacing : verticalSpacing
     readonly property int crossSpacing: horizontalLayout ? verticalSpacing : horizontalSpacing
     // Alignment is independent on the launcher (primary) and cross axes.
@@ -430,13 +429,6 @@ PlasmoidItem {
         transferLauncherIndex = -1;
     }
 
-    function triggerInternalAction(name) {
-        const action = Plasmoid.internalAction(name);
-        if (action) {
-            action.trigger();
-        }
-    }
-
     ListModel {
         id: tabsModel
     }
@@ -598,7 +590,6 @@ PlasmoidItem {
                 readonly property string iconName: info.iconName || "system-run"
 
                 DragAndDrop.DragArea {
-                    id: dragSource
                     anchors.fill: parent
                     enabled: !Plasmoid.immutable
                     defaultAction: Qt.MoveAction
@@ -794,7 +785,6 @@ PlasmoidItem {
         }
 
         Item {
-            id: emptyItem
             readonly property real emptyPrimarySlack: Math.max(0,
                 (root.horizontalLayout ? root.launcherWidth : root.launcherHeight) -
                 (root.horizontalLayout ? width : height))
@@ -873,7 +863,6 @@ PlasmoidItem {
 
         // Tabs follow panel orientation. On desktop their side is explicit.
         Rectangle {
-            id: tabStripBackground
             visible: root.tabsCanShow
             z: 20
             x: root.tabStripVertical ? (root.tabStripOnStartSide ? 0 : content.width - root.tabStripThickness) : 0
@@ -885,7 +874,6 @@ PlasmoidItem {
                            Kirigami.Theme.textColor.b, 0.035)
 
             ListView {
-                id: tabList
                 anchors.fill: parent
                 orientation: root.tabStripVertical ? ListView.Vertical : ListView.Horizontal
                 spacing: 2
@@ -1067,7 +1055,6 @@ PlasmoidItem {
             height: root.extentForSlots(popupRows, root.verticalSpacing)
 
             GridView {
-                id: overflowGrid
                 anchors.fill: parent
                 clip: true
                 interactive: contentHeight > height
