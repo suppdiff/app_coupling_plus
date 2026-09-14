@@ -52,15 +52,30 @@ sudo pacman -S --needed base-devel cmake extra-cmake-modules
 
 The remaining Qt/KDE runtime and development dependencies are normally already present on a Plasma development system; CMake will report anything missing.
 
-## Build and install
+## Installation
 
-Clone or download the source, enter the project directory, then run:
+### Arch Linux / CachyOS package
+
+For a normal installation, download the latest `.pkg.tar.zst` package from the GitHub Releases page, then install it with pacman.
+
+> **Important:** Rename the directories and the `*.pkg.tar.zst` filename below to match your actual download location and downloaded package filename.
+
+```bash
+cd ~/Downloads
+sudo pacman -U ./plasma6-applets-app-coupling-plus-<version>-<pkgrel>-x86_64.pkg.tar.zst
+```
+
+This installs App Coupling+ system-wide under `/usr` and lets pacman manage the installation.
+
+### Local source installation
+
+For development or a user-local installation, clone or download the source, enter the project directory, then run:
 
 ```bash
 ./install-local.sh
 ```
 
-The installer builds App Coupling+ and installs it under `~/.local`. It does not install files into `/usr` and does not use `sudo`.
+The installer builds App Coupling+ and installs it under `~/.local`. It does not install files into `/usr` and does not require `sudo`.
 
 Because App Coupling+ includes a native QML plugin, restart Plasma after installing or updating it:
 
