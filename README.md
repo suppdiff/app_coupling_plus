@@ -12,8 +12,11 @@ A configurable application-launcher widget for KDE Plasma 6, built around indepe
 ![App Coupling+ desktop](screenshots/4.jpeg)
 
 
+![App Coupling+ desktop hover](screenshots/5.webp)
+
 ## Features
 
+- Desktop appearance modes — Normal, Transparent, and Reveal on hover
 - Independent launcher lists — not tied to Plasma Favorites
 - Drag applications or `.desktop` launchers onto the widget
 - Drag launchers to reorder them

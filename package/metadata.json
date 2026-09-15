@@ -7,7 +7,7 @@
     "Id": "io.github.suppdiff.appcouplingplus",
     "License": "GPL-3.0-or-later",
     "Name": "App Coupling+",
-    "Version": "1.0.3"
+    "Version": "1.0.4"
   },
   "KPackageStructure": "Plasma/Applet",
   "X-Plasma-API-Minimum-Version": "6.0"

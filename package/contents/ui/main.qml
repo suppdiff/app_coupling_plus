@@ -54,6 +54,32 @@ PlasmoidItem {
     readonly property int borderRadius: Math.max(0, Plasmoid.configuration.borderRadius)
     readonly property int contentInset: borderWidth
 
+    // Desktop-only appearance. Panels keep their normal appearance.
+    // 0 = normal, 1 = transparent, 2 = reveal the whole widget only while hovered.
+    readonly property int desktopAppearance: Math.max(0, Math.min(2, Plasmoid.configuration.desktopAppearance))
+    readonly property int desktopRevealAnimation: Math.max(0, Math.min(1, Plasmoid.configuration.desktopRevealAnimation))
+    readonly property int desktopRevealDuration: Math.max(0, Math.min(500, Plasmoid.configuration.desktopRevealDuration))
+    readonly property bool desktopRevealMode: !inPanel && desktopAppearance === 2
+    readonly property bool desktopHovered: desktopHover.hovered
+    readonly property real desktopVisualOpacity: desktopRevealMode && !desktopHovered ? 0.0 : 1.0
+    readonly property bool desktopRevealAnimated: desktopRevealMode && desktopRevealAnimation === 1 && desktopRevealDuration > 0
+
+    // Keep the background hint stable in reveal mode. Toggling the native Plasma
+    // background while crossing the widget edge can change the effective hover
+    // region and cause flicker. Reveal mode therefore stays transparent and only
+    // fades the visual contents; geometry never changes.
+    Plasmoid.backgroundHints: {
+        if (inPanel || desktopAppearance === 0) {
+            return PlasmaCore.Types.DefaultBackground;
+        }
+        return PlasmaCore.Types.NoBackground;
+    }
+
+    HoverHandler {
+        id: desktopHover
+        enabled: !root.inPanel
+    }
+
     // Optional launcher groups/tabs.
     readonly property bool tabsEnabled: Plasmoid.configuration.enableTabs
     readonly property int panelTabPosition: Math.max(0, Math.min(1, Plasmoid.configuration.panelTabPosition))
@@ -533,13 +559,31 @@ PlasmoidItem {
         border.width: root.borderWidth
         border.color: Kirigami.Theme.textColor
         radius: root.borderRadius
-        opacity: root.borderOpacity
+        opacity: root.borderOpacity * root.desktopVisualOpacity
+
+        Behavior on opacity {
+            enabled: root.desktopRevealAnimated
+            NumberAnimation {
+                duration: root.desktopRevealDuration
+                easing.type: Easing.OutCubic
+            }
+        }
     }
 
     Item {
         id: content
         anchors.fill: parent
         anchors.margins: root.contentInset
+        opacity: root.desktopVisualOpacity
+        enabled: !root.desktopRevealMode || root.desktopHovered
+
+        Behavior on opacity {
+            enabled: root.desktopRevealAnimated
+            NumberAnimation {
+                duration: root.desktopRevealDuration
+                easing.type: Easing.OutCubic
+            }
+        }
 
         GridView {
             id: grid
@@ -863,6 +907,7 @@ PlasmoidItem {
 
         // Tabs follow panel orientation. On desktop their side is explicit.
         Rectangle {
+            id: tabStrip
             visible: root.tabsCanShow
             z: 20
             x: root.tabStripVertical ? (root.tabStripOnStartSide ? 0 : content.width - root.tabStripThickness) : 0
