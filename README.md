@@ -3,13 +3,9 @@
 A configurable application-launcher widget for KDE Plasma 6, built around independent launcher groups, drag-and-drop ordering, flexible sizing, and optional tabs.
 
 
-![App Coupling+ panel](screenshots/1.jpeg)
+![App Coupling+ panel](screenshots/1.jpeg) ![App Coupling+ tabs](screenshots/2.jpeg)
 
-![App Coupling+ tabs](screenshots/2.jpeg)
-
-![App Coupling+ vertical panel](screenshots/3.jpeg)
-
-![App Coupling+ desktop](screenshots/4.jpeg)
+![App Coupling+ vertical panel](screenshots/3.jpeg) ![App Coupling+ desktop](screenshots/4.jpeg)
 
 
 ![App Coupling+ desktop hover](screenshots/5.webp)
