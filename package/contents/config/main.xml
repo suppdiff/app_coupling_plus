@@ -15,6 +15,17 @@
     <entry name="iconSize" type="Int">
       <default>32</default>
     </entry>
+    <entry name="labelMode" type="Int">
+      <default>0</default>
+    </entry>
+    <entry name="labelWidth" type="Int">
+      <default>100</default>
+    </entry>
+    <!-- Appearance overrides are a JSON mapping keyed by launcher URL.
+         Keep launcher URLs and tab ordering in their original fields. -->
+    <entry name="launcherOverridesJson" type="String">
+      <default>{}</default>
+    </entry>
     <entry name="horizontalSpacing" type="Int">
       <default>2</default>
     </entry>

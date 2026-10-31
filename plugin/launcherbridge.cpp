@@ -1,9 +1,11 @@
+// App Coupling+ local enhancement v1
 // SPDX-FileCopyrightText: 2026 suppdiff
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "launcherbridge.h"
 
 #include <QFileInfo>
+#include <QFileDialog>
 #include <QMimeDatabase>
 #include <QMimeType>
 
@@ -122,4 +124,20 @@ void LauncherBridge::addLauncher()
     });
 
     dialog->show();
+}
+
+// Non-modal native image chooser: returns a file URL usable by Kirigami.Icon.
+void LauncherBridge::selectIconFile()
+{
+    auto *dialog = new QFileDialog();
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setFileMode(QFileDialog::ExistingFile);
+    dialog->setNameFilter(QStringLiteral("Images (*.png *.svg *.svgz *.jpg *.jpeg *.webp *.ico);;All files (*)"));
+    dialog->setWindowTitle(QStringLiteral("Choose launcher icon"));
+    connect(dialog, &QFileDialog::accepted, this, [this, dialog]() {
+        const auto files = dialog->selectedFiles();
+        if (!files.isEmpty())
+            Q_EMIT iconFileSelected(QUrl::fromLocalFile(files.first()).toString());
+    });
+    dialog->open();
 }

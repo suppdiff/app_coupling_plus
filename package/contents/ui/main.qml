@@ -1,3 +1,4 @@
+// App Coupling+ local enhancement v1
 // SPDX-FileCopyrightText: 2026 suppdiff
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -27,10 +28,22 @@ PlasmoidItem {
     readonly property int sectionCount: Math.max(1, Plasmoid.configuration.sections)
     readonly property int requestedIconSize: Math.max(8, Plasmoid.configuration.iconSize)
     readonly property int effectiveIconSize: requestedIconSize
+    // 0 = icons only; 1 = labels to the right; 2 = labels below.
+    readonly property int labelMode: Math.max(0, Math.min(2, Plasmoid.configuration.labelMode))
+    readonly property bool labelsRight: labelMode === 1
+    readonly property bool labelsBelow: labelMode === 2
+    readonly property int labelWidth: Math.max(48, Plasmoid.configuration.labelWidth)
+    readonly property int labelHeight: 19
+    readonly property int labelGap: 5
+    readonly property int itemWidth: labelsRight ? requestedIconSize + labelGap + labelWidth
+        : (labelsBelow ? Math.max(requestedIconSize, labelWidth) : requestedIconSize)
+    readonly property int itemHeight: labelsBelow ? requestedIconSize + labelGap + labelHeight : requestedIconSize
     readonly property int horizontalSpacing: Math.max(0, Plasmoid.configuration.horizontalSpacing)
     readonly property int verticalSpacing: Math.max(0, Plasmoid.configuration.verticalSpacing)
-    readonly property int cellWidth: requestedIconSize + horizontalSpacing
-    readonly property int cellHeight: requestedIconSize + verticalSpacing
+    readonly property int cellWidth: itemWidth + horizontalSpacing
+    readonly property int cellHeight: itemHeight + verticalSpacing
+    readonly property int primaryItemExtent: horizontalLayout ? itemWidth : itemHeight
+    readonly property int crossItemExtent: horizontalLayout ? itemHeight : itemWidth
     readonly property int primaryCellExtent: horizontalLayout ? cellWidth : cellHeight
     readonly property int primarySpacing: horizontalLayout ? horizontalSpacing : verticalSpacing
     readonly property int crossSpacing: horizontalLayout ? verticalSpacing : horizontalSpacing
@@ -117,8 +130,8 @@ PlasmoidItem {
     }
     readonly property bool tabsCanShow: tabsEnabled && tabsModel.count > 0 &&
         (tabStripVertical
-            ? content.width >= requestedIconSize + tabReserve
-            : content.height >= requestedIconSize + tabReserve)
+            ? content.width >= itemWidth + tabReserve
+            : content.height >= itemHeight + tabReserve)
 
     readonly property real launcherX: tabsCanShow && tabStripVertical && tabStripOnStartSide ? tabReserve : 0
     readonly property real launcherY: tabsCanShow && !tabStripVertical && tabStripOnStartSide ? tabReserve : 0
@@ -126,45 +139,45 @@ PlasmoidItem {
     readonly property real launcherHeight: Math.max(1, content.height - (tabsCanShow && !tabStripVertical ? tabReserve : 0))
 
     readonly property int configuredPrimarySlots: Math.max(1, Math.ceil(launcherModel.count / sectionCount))
-    function extentForSlots(slots, spacing) {
+    function extentForSlots(slots, spacing, itemExtent) {
         const count = Math.max(1, slots);
-        return count * requestedIconSize + Math.max(0, count - 1) * spacing;
+        return count * itemExtent + Math.max(0, count - 1) * spacing;
     }
 
-    function slotsForExtent(extent, spacing) {
-        return Math.max(1, Math.floor((Math.max(0, extent) + spacing) / Math.max(1, requestedIconSize + spacing)));
+    function slotsForExtent(extent, spacing, itemExtent) {
+        return Math.max(1, Math.floor((Math.max(0, extent) + spacing) / Math.max(1, itemExtent + spacing)));
     }
 
-    readonly property int fullPrimaryExtent: extentForSlots(configuredPrimarySlots, primarySpacing) + contentInset * 2
+    readonly property int fullPrimaryExtent: extentForSlots(configuredPrimarySlots, primarySpacing, primaryItemExtent) + contentInset * 2
     readonly property int navigationExtent: Math.max(20, Math.min(30, requestedIconSize))
     // Keep at least one launcher cell usable, plus any overflow controls that must coexist with it.
     readonly property int minimumControlExtent: overflowMode === 0 ? navigationExtent * 2 : (overflowMode === 1 ? navigationExtent : 0)
-    readonly property int minimumPrimaryExtent: requestedIconSize + minimumControlExtent + contentInset * 2
+    readonly property int minimumPrimaryExtent: primaryItemExtent + minimumControlExtent + contentInset * 2
     readonly property int autoPrimaryExtent: Math.max(minimumPrimaryExtent, Math.min(fullPrimaryExtent, Math.max(minimumPrimaryExtent, automaticMaxLength)))
     readonly property int fixedPrimaryExtent: Math.max(minimumPrimaryExtent, configuredFixedLength)
     readonly property int preferredPrimaryExtent: lengthMode === 1 ? fixedPrimaryExtent : autoPrimaryExtent
-    readonly property int configuredCrossExtent: extentForSlots(sectionCount, crossSpacing) + contentInset * 2
+    readonly property int configuredCrossExtent: extentForSlots(sectionCount, crossSpacing, crossItemExtent) + contentInset * 2
     readonly property int desktopWidthExtra: !inPanel && tabsEnabled && tabStripVertical ? tabReserve : 0
     readonly property int desktopHeightExtra: !inPanel && tabsEnabled && !tabStripVertical ? tabReserve : 0
 
     // Overflow is calculated from the actual launcher area. Icons never shrink to make the grid fit.
     readonly property real contentPrimaryAvailable: Math.max(1, horizontalLayout ? launcherWidth : launcherHeight)
     readonly property real contentCrossAvailable: Math.max(1, horizontalLayout ? launcherHeight : launcherWidth)
-    readonly property int crossGridExtent: Math.max(1, Math.min(extentForSlots(sectionCount, crossSpacing), Math.floor(contentCrossAvailable)))
-    readonly property int visibleCrossSlots: slotsForExtent(crossGridExtent, crossSpacing)
-    readonly property int rawVisiblePrimarySlots: slotsForExtent(contentPrimaryAvailable, primarySpacing)
+    readonly property int crossGridExtent: Math.max(1, Math.min(extentForSlots(sectionCount, crossSpacing, crossItemExtent), Math.floor(contentCrossAvailable)))
+    readonly property int visibleCrossSlots: slotsForExtent(crossGridExtent, crossSpacing, crossItemExtent)
+    readonly property int rawVisiblePrimarySlots: slotsForExtent(contentPrimaryAvailable, primarySpacing, primaryItemExtent)
     readonly property bool rawOverflow: launcherModel.count > rawVisiblePrimarySlots * visibleCrossSlots
     readonly property int leadingReserve: overflowMode === 0 && rawOverflow ? navigationExtent : 0
     readonly property int trailingReserve: rawOverflow ? (overflowMode === 0 ? navigationExtent : (overflowMode === 1 ? navigationExtent : 0)) : 0
     readonly property int gridPrimaryExtent: Math.max(1, Math.floor(contentPrimaryAvailable - leadingReserve - trailingReserve))
-    readonly property int visiblePrimarySlots: slotsForExtent(gridPrimaryExtent, primarySpacing)
+    readonly property int visiblePrimarySlots: slotsForExtent(gridPrimaryExtent, primarySpacing, primaryItemExtent)
     readonly property int pageCapacity: Math.max(1, visiblePrimarySlots * visibleCrossSlots)
     readonly property int pageCount: Math.max(1, Math.ceil(launcherModel.count / pageCapacity))
     readonly property bool hasOverflow: launcherModel.count > pageCapacity
     readonly property int hiddenCount: Math.max(0, launcherModel.count - pageCapacity)
     readonly property int pagePixelExtent: visiblePrimarySlots * primaryCellExtent
     readonly property int usedPrimarySlots: Math.max(1, Math.ceil(launcherModel.count / visibleCrossSlots))
-    readonly property int usedPrimaryExtent: Math.min(gridPrimaryExtent, extentForSlots(usedPrimarySlots, primarySpacing))
+    readonly property int usedPrimaryExtent: Math.min(gridPrimaryExtent, extentForSlots(usedPrimarySlots, primarySpacing, primaryItemExtent))
     readonly property int alignedGridPrimaryExtent: hasOverflow ? gridPrimaryExtent : usedPrimaryExtent
     readonly property int primaryAlignmentSlack: Math.max(0, gridPrimaryExtent - alignedGridPrimaryExtent)
     readonly property int primaryAlignmentOffset: primaryLauncherAlignment === 1
@@ -177,6 +190,10 @@ PlasmoidItem {
 
     property int pageIndex: 0
     property bool dragging: false
+    // Stored separately from launcherUrls to preserve the existing format,
+    // drag-reordering, overflow and tabs. Keys are launcher URL strings.
+    property var launcherOverrides: ({})
+    property string editingLauncherUrl: ""
     property int internalDragIndex: -1
     property int internalDragOriginalIndex: -1
     property int activeTab: 0
@@ -189,7 +206,7 @@ PlasmoidItem {
     Layout.minimumWidth: verticalPanel ? 0 : (lengthMode === 1 ? fixedPrimaryExtent : minimumPrimaryExtent) + desktopWidthExtra
     Layout.fillWidth: horizontalPanel && lengthMode === 2
     Layout.preferredHeight: verticalPanel ? preferredPrimaryExtent : (horizontalPanel ? -1 : configuredCrossExtent + desktopHeightExtra)
-    Layout.minimumHeight: verticalPanel ? (lengthMode === 1 ? fixedPrimaryExtent : minimumPrimaryExtent) : (horizontalPanel ? 0 : requestedIconSize + contentInset * 2 + desktopHeightExtra)
+    Layout.minimumHeight: verticalPanel ? (lengthMode === 1 ? fixedPrimaryExtent : minimumPrimaryExtent) : (horizontalPanel ? 0 : crossItemExtent + contentInset * 2 + desktopHeightExtra)
     Layout.fillHeight: verticalPanel && lengthMode === 2
 
     implicitWidth: verticalPanel ? configuredCrossExtent : preferredPrimaryExtent + desktopWidthExtra
@@ -219,7 +236,7 @@ PlasmoidItem {
         }
 
         const primarySlots = Math.max(1, Math.ceil(launcherModel.count / visibleCrossSlots));
-        const modelPrimaryExtent = root.extentForSlots(primarySlots, root.primarySpacing);
+        const modelPrimaryExtent = root.extentForSlots(primarySlots, root.primarySpacing, root.primaryItemExtent);
         if (horizontalLayout) {
             const maxOffset = Math.max(0, modelPrimaryExtent - grid.width);
             grid.contentX = Math.max(0, Math.min(maxOffset, grid.contentX + delta));
@@ -523,6 +540,43 @@ PlasmoidItem {
         return true;
     }
 
+    // An override belongs to a launcher URL within this plasmoid instance.
+    // Keeping it separate from launcherUrls preserves ordering and tab behavior.
+    function appearanceFor(url) {
+        return launcherOverrides[url.toString()] || {};
+    }
+    function loadAppearanceOverrides() {
+        try {
+            const obj = JSON.parse(Plasmoid.configuration.launcherOverridesJson || "{}");
+            launcherOverrides = obj && typeof obj === "object" && !Array.isArray(obj) ? obj : {};
+        } catch (e) {
+            launcherOverrides = {};
+        }
+    }
+    function editAppearance(url) {
+        editingLauncherUrl = url.toString();
+        const data = launcherBridge.launcherData(url);
+        const saved = appearanceFor(url);
+        appearanceName.text = saved.name || data.applicationName || "";
+        appearanceIcon.text = saved.icon || "";
+        appearanceDialog.visible = true;
+    }
+    // Replace the object rather than mutating it in place so QML bindings
+    // are notified; serialize through Plasma configuration for persistence.
+    function saveAppearance() {
+        if (!editingLauncherUrl)
+            return;
+        const updated = Object.assign({}, launcherOverrides);
+        const name = appearanceName.text.trim();
+        const icon = appearanceIcon.text.trim();
+        if (name || icon)
+            updated[editingLauncherUrl] = { name: name, icon: icon };
+        else
+            delete updated[editingLauncherUrl];
+        launcherOverrides = updated;
+        Plasmoid.configuration.launcherOverridesJson = JSON.stringify(updated);
+        appearanceDialog.visible = false;
+    }
     function removeLauncher(index) {
         if (index < 0 || index >= launcherModel.count) {
             return;
@@ -626,12 +680,12 @@ PlasmoidItem {
                 readonly property bool appCouplingLauncher: true
                 readonly property var appCouplingRoot: root
 
-                width: root.requestedIconSize
-                height: root.requestedIconSize
-
+                width: root.itemWidth
+                height: root.itemHeight
                 readonly property var info: launcherBridge.launcherData(launcherUrl)
-                readonly property string displayName: info.applicationName || launcherUrl
-                readonly property string iconName: info.iconName || "system-run"
+                readonly property var appearance: root.appearanceFor(launcherUrl)
+                readonly property string displayName: appearance.name || info.applicationName || launcherUrl
+                readonly property string iconName: appearance.icon || info.iconName || "system-run"
 
                 DragAndDrop.DragArea {
                     anchors.fill: parent
@@ -662,13 +716,26 @@ PlasmoidItem {
 
                         Kirigami.Icon {
                             id: appIcon
-                            anchors.centerIn: parent
+                            x: root.labelsRight ? 0 : Math.round((parent.width - width) / 2)
+                            y: root.labelsBelow ? 0 : Math.round((parent.height - height) / 2)
                             width: root.effectiveIconSize
                             height: width
                             source: launcherItem.iconName
                             active: mouseArea.containsMouse || launcherItem.index === root.internalDragIndex
                         }
-
+                        QQC2.Label {
+                            visible: root.labelMode !== 0
+                            x: root.labelsRight ? root.requestedIconSize + root.labelGap : 0
+                            y: root.labelsBelow ? root.requestedIconSize + root.labelGap : 0
+                            width: root.labelsRight ? root.labelWidth : parent.width
+                            height: root.labelsBelow ? root.labelHeight : parent.height
+                            text: launcherItem.displayName
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: root.labelsBelow ? Text.AlignHCenter : Text.AlignLeft
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                            font.pixelSize: 11
+                        }
                         PlasmaCore.ToolTipArea {
                             anchors.fill: parent
                             mainText: launcherItem.displayName
@@ -679,7 +746,11 @@ PlasmoidItem {
                         PlasmaExtras.Menu {
                             id: itemMenu
                             visualParent: mouseArea
-
+                            PlasmaExtras.MenuItem {
+                                text: i18n("Edit name and icon…")
+                                icon: "document-edit"
+                                onClicked: root.editAppearance(launcherItem.launcherUrl)
+                            }
                             PlasmaExtras.MenuItem {
                                 text: i18n("Remove Launcher")
                                 icon: "list-remove"
@@ -1096,8 +1167,8 @@ PlasmoidItem {
         mainItem: Item {
             readonly property int popupColumns: Math.max(1, Math.min(6, overflowModel.count))
             readonly property int popupRows: Math.max(1, Math.min(6, Math.ceil(overflowModel.count / popupColumns)))
-            width: root.extentForSlots(popupColumns, root.horizontalSpacing)
-            height: root.extentForSlots(popupRows, root.verticalSpacing)
+            width: root.extentForSlots(popupColumns, root.horizontalSpacing, root.itemWidth)
+            height: root.extentForSlots(popupRows, root.verticalSpacing, root.itemHeight)
 
             GridView {
                 anchors.fill: parent
@@ -1111,12 +1182,12 @@ PlasmoidItem {
                     required property int index
                     required property string launcherUrl
                     required property int sourceIndex
-                    width: root.requestedIconSize
-                    height: root.requestedIconSize
-
+                    width: root.itemWidth
+                    height: root.itemHeight
                     readonly property var info: launcherBridge.launcherData(launcherUrl)
-                    readonly property string displayName: info.applicationName || launcherUrl
-                    readonly property string iconName: info.iconName || "system-run"
+                    readonly property var appearance: root.appearanceFor(launcherUrl)
+                    readonly property string displayName: appearance.name || info.applicationName || launcherUrl
+                    readonly property string iconName: appearance.icon || info.iconName || "system-run"
 
                     MouseArea {
                         id: popupMouse
@@ -1133,13 +1204,26 @@ PlasmoidItem {
                         }
 
                         Kirigami.Icon {
-                            anchors.centerIn: parent
+                            x: root.labelsRight ? 0 : Math.round((parent.width - width) / 2)
+                            y: root.labelsBelow ? 0 : Math.round((parent.height - height) / 2)
                             width: root.requestedIconSize
                             height: width
                             source: iconName
                             active: popupMouse.containsMouse
                         }
-
+                        QQC2.Label {
+                            visible: root.labelMode !== 0
+                            x: root.labelsRight ? root.requestedIconSize + root.labelGap : 0
+                            y: root.labelsBelow ? root.requestedIconSize + root.labelGap : 0
+                            width: root.labelsRight ? root.labelWidth : parent.width
+                            height: root.labelsBelow ? root.labelHeight : parent.height
+                            text: displayName
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: root.labelsBelow ? Text.AlignHCenter : Text.AlignLeft
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                            font.pixelSize: 11
+                        }
                         PlasmaCore.ToolTipArea {
                             anchors.fill: parent
                             mainText: displayName
@@ -1150,7 +1234,14 @@ PlasmoidItem {
                         PlasmaExtras.Menu {
                             id: popupItemMenu
                             visualParent: popupMouse
-
+                            PlasmaExtras.MenuItem {
+                                text: i18n("Edit name and icon…")
+                                icon: "document-edit"
+                                onClicked: {
+                                    overflowDialog.visible = false;
+                                    root.editAppearance(launcherUrl);
+                                }
+                            }
                             PlasmaExtras.MenuItem {
                                 text: i18n("Remove Launcher")
                                 icon: "list-remove"
@@ -1183,6 +1274,70 @@ PlasmoidItem {
         }
     }
 
+    // Per-launcher appearance editor, independent of the main layout settings.
+    PlasmaCore.Dialog {
+        id: appearanceDialog
+        visualParent: root
+        location: Plasmoid.location
+        type: PlasmaCore.Dialog.PopupMenu
+        hideOnWindowDeactivate: false
+        backgroundHints: PlasmaCore.Dialog.StandardBackground
+        visible: false
+        mainItem: ColumnLayout {
+            width: 330
+            spacing: 8
+            QQC2.Label {
+                Layout.fillWidth: true
+                text: i18n("Launcher name and icon")
+                font.bold: true
+            }
+            QQC2.Label { text: i18n("Display name:") }
+            QQC2.TextField {
+                id: appearanceName
+                Layout.fillWidth: true
+                placeholderText: i18n("Automatic name")
+                selectByMouse: true
+                onAccepted: root.saveAppearance()
+            }
+            QQC2.Label { text: i18n("Icon name or image file:") }
+            RowLayout {
+                Layout.fillWidth: true
+                QQC2.TextField {
+                    id: appearanceIcon
+                    Layout.fillWidth: true
+                    placeholderText: i18n("folder-blue or file:///path/to/icon.svg")
+                    selectByMouse: true
+                    onAccepted: root.saveAppearance()
+                }
+                QQC2.Button {
+                    text: i18n("Browse…")
+                    onClicked: launcherBridge.selectIconFile()
+                }
+            }
+            QQC2.Label {
+                Layout.fillWidth: true
+                text: i18n("Leave fields empty for automatic values. Changes affect this widget only.")
+                wrapMode: Text.WordWrap
+                opacity: 0.7
+            }
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+                QQC2.Button {
+                    text: i18n("Reset")
+                    onClicked: { appearanceName.text = ""; appearanceIcon.text = ""; }
+                }
+                QQC2.Button {
+                    text: i18n("Cancel")
+                    onClicked: appearanceDialog.visible = false
+                }
+                QQC2.Button {
+                    text: i18n("Save")
+                    highlighted: true
+                    onClicked: root.saveAppearance()
+                }
+            }
+        }
+    }
     PlasmaCore.Dialog {
         id: transferDialog
         visualParent: root
@@ -1366,6 +1521,10 @@ PlasmoidItem {
     LauncherBridge {
         id: launcherBridge
 
+        onIconFileSelected: url => {
+            if (appearanceDialog.visible && url.length > 0)
+                appearanceIcon.text = url;
+        }
         onLauncherAdded: url => {
             launcherModel.insertUrls(launcherModel.count, [url]);
             root.saveLaunchers();
@@ -1423,6 +1582,7 @@ PlasmoidItem {
     onPageCountChanged: clampPage()
 
     Component.onCompleted: {
+        loadAppearanceOverrides();
         if (tabsEnabled) {
             loadTabs();
             loadActiveTabLaunchers();

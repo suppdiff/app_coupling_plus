@@ -1,3 +1,4 @@
+// App Coupling+ local enhancement v1
 // SPDX-FileCopyrightText: 2026 suppdiff
 // SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -42,6 +43,8 @@ QQC2.ScrollView {
 
     property alias cfg_sections: sections.value
     property alias cfg_iconSize: iconSize.value
+    property alias cfg_labelMode: labelMode.currentIndex
+    property alias cfg_labelWidth: labelWidth.value
     property alias cfg_horizontalSpacing: horizontalSpacing.value
     property alias cfg_verticalSpacing: verticalSpacing.value
     property alias cfg_launcherAlignment: launcherAlignment.currentIndex
@@ -229,6 +232,40 @@ QQC2.ScrollView {
                 }
             }
 
+            Item {
+                width: parent.width
+                height: page.rowHeight
+                QQC2.Label {
+                    x: page.firstControlX - implicitWidth - page.labelGap
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: i18n("Launcher labels:")
+                }
+                QQC2.ComboBox {
+                    // Applies to the entire widget; icons remain the default.
+                    id: labelMode
+                    x: page.firstControlX
+                    width: 160
+                    anchors.verticalCenter: parent.verticalCenter
+                    model: [i18n("Icons only"), i18n("Right of icons"), i18n("Below icons")]
+                }
+                QQC2.Label {
+                    x: page.secondControlX - implicitWidth - page.labelGap
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: i18n("Label width:")
+                    enabled: labelWidth.enabled
+                }
+                QQC2.SpinBox {
+                    id: labelWidth
+                    x: page.secondControlX
+                    width: page.compactControlWidth
+                    anchors.verticalCenter: parent.verticalCenter
+                    from: 48
+                    to: 300
+                    stepSize: 8
+                    editable: true
+                    enabled: labelMode.currentIndex !== 0
+                }
+            }
             Item {
                 width: parent.width
                 height: 24
