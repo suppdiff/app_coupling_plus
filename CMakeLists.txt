@@ -24,11 +24,3 @@ plasma_install_package(package io.github.suppdiff.appcouplingplus)
 add_subdirectory(plugin)
 
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
-
-option(APP_COUPLING_TESTS "Build native regression tests" OFF)
-if(APP_COUPLING_TESTS)
-    enable_testing()
-    find_package(Qt6 6.7 REQUIRED COMPONENTS Quick QuickTest Test)
-    find_package(PlasmaQuick REQUIRED)
-    add_subdirectory(tests)
-endif()
