@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import QtQuick
+import "LauncherState.js" as State
 import QtQuick.Controls as QQC2
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
@@ -18,7 +19,14 @@ QQC2.ScrollView {
         ? configNavigationExtent * 2
         : (overflowMode.currentIndex === 1 ? configNavigationExtent : 0)
     readonly property int configBorderInset: showBorder.checked ? borderWidth.value : 0
-    readonly property int minimumUsableLength: iconSize.value + configControlExtent + configBorderInset * 2
+    readonly property var currentTabs: State.list(Plasmoid.configuration.tabsJson)
+    readonly property bool previewShowsNames: {
+        const tab = currentTabs[Plasmoid.configuration.selectedTab];
+        return showNames.checked !== Boolean(enableTabs.checked && tab
+            && State.exceptions(cfg_tabNameExceptions)[tab.key]);
+    }
+    readonly property int minimumUsableLength: (previewShowsNames
+        ? (verticalPanel ? iconSize.value + 17 : Math.max(64, iconSize.value)) : iconSize.value) + configControlExtent + configBorderInset * 2
     readonly property int configTabItemThickness: Math.max(24, Math.min(36, iconSize.value))
     readonly property int configVerticalTabStripWidth: Math.max(72, Math.min(144, iconSize.value * 3))
     readonly property bool configTabStripVertical: inPanel ? verticalPanel : desktopTabPosition.currentIndex >= 2
@@ -39,6 +47,25 @@ QQC2.ScrollView {
     readonly property int secondControlX: secondLabelX + 112
     readonly property int compactControlWidth: 88
     readonly property int comboControlWidth: 135
+
+    property alias cfg_showNames: showNames.checked
+    property string cfg_tabNameExceptions: "[]"
+    property var initialExceptions: ({})
+    property var changedTabs: Object.create(null)
+
+    function saveConfig() {
+        const config = Plasmoid.configuration;
+        cfg_tabNameExceptions = State.updateVisibility(config.tabNameExceptions, changedTabs, currentTabs);
+        refreshTabs();
+    }
+
+    function refreshTabs() {
+        initialExceptions = State.exceptions(cfg_tabNameExceptions);
+        changedTabs = Object.create(null);
+        tabVisibility.replaceRows(currentTabs, initialExceptions);
+    }
+
+    Component.onCompleted: refreshTabs()
 
     property alias cfg_sections: sections.value
     property alias cfg_iconSize: iconSize.value
@@ -105,6 +132,16 @@ QQC2.ScrollView {
                 }
             }
 
+            QQC2.Label {
+                x: page.firstControlX
+                width: parent.width - x
+                font: Kirigami.Theme.smallFont
+                opacity: 0.8
+                wrapMode: Text.Wrap
+                text: i18n("Shift + scroll selects tabs")
+                visible: enableTabs.checked
+            }
+
             Item {
                 width: parent.width
                 height: page.rowHeight
@@ -114,15 +151,13 @@ QQC2.ScrollView {
                     anchors.verticalCenter: parent.verticalCenter
                     text: page.verticalPanel ? i18n("Columns:") : i18n("Rows:")
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: sections
                     x: page.firstControlX
                     width: page.compactControlWidth
                     anchors.verticalCenter: parent.verticalCenter
                     from: 1
                     to: 99
-                    editable: true
-                    textFromValue: function(value) { return value.toString(); }
                 }
 
                 QQC2.Label {
@@ -130,7 +165,7 @@ QQC2.ScrollView {
                     anchors.verticalCenter: parent.verticalCenter
                     text: i18n("Icon size:")
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: iconSize
                     x: page.secondControlX
                     width: page.compactControlWidth
@@ -138,12 +173,7 @@ QQC2.ScrollView {
                     from: 12
                     to: 128
                     stepSize: 2
-                    editable: true
-                    textFromValue: function(value) { return value + " px"; }
-                    valueFromText: function(text) {
-                        const n = parseInt(text);
-                        return isNaN(n) ? value : n;
-                    }
+                    unit: " px"
                 }
             }
 
@@ -156,19 +186,14 @@ QQC2.ScrollView {
                     anchors.verticalCenter: parent.verticalCenter
                     text: i18n("Horizontal spacing:")
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: horizontalSpacing
                     x: page.firstControlX
                     width: page.compactControlWidth
                     anchors.verticalCenter: parent.verticalCenter
                     from: 0
                     to: 64
-                    editable: true
-                    textFromValue: function(value) { return value + " px"; }
-                    valueFromText: function(text) {
-                        const n = parseInt(text);
-                        return isNaN(n) ? value : n;
-                    }
+                    unit: " px"
                 }
 
                 QQC2.Label {
@@ -176,19 +201,14 @@ QQC2.ScrollView {
                     anchors.verticalCenter: parent.verticalCenter
                     text: i18n("Vertical spacing:")
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: verticalSpacing
                     x: page.secondControlX
                     width: page.compactControlWidth
                     anchors.verticalCenter: parent.verticalCenter
                     from: 0
                     to: 64
-                    editable: true
-                    textFromValue: function(value) { return value + " px"; }
-                    valueFromText: function(text) {
-                        const n = parseInt(text);
-                        return isNaN(n) ? value : n;
-                    }
+                    unit: " px"
                 }
             }
 
@@ -226,6 +246,38 @@ QQC2.ScrollView {
                     model: page.verticalPanel
                         ? [i18n("Left"), i18n("Center"), i18n("Right")]
                         : [i18n("Top"), i18n("Center"), i18n("Bottom")]
+                }
+            }
+
+            QQC2.CheckBox {
+                id: showNames
+                x: page.firstControlX
+                text: i18n("Show names")
+            }
+
+            TabNameRows {
+                id: tabVisibility
+                explanation: i18n("Show/hide names by tab")
+                x: page.firstControlX
+                width: Math.max(190, page.secondLabelX - x - 18)
+                visible: enableTabs.checked && rowCount > 0
+                onRowsChangedByUser: (keys, follow) => {
+                    const edits = page.changedTabs;
+                    const staged = State.exceptions(page.cfg_tabNameExceptions);
+                    for (const key of keys) {
+                        const invert = !follow;
+                        if (invert === Boolean(page.initialExceptions[key])) {
+                            delete edits[key];
+                        } else {
+                            edits[key] = invert;
+                        }
+                        if (invert) {
+                            staged[key] = true;
+                        } else {
+                            delete staged[key];
+                        }
+                    }
+                    page.cfg_tabNameExceptions = State.encodeExceptions(staged);
                 }
             }
 
@@ -364,7 +416,7 @@ QQC2.ScrollView {
                     visible: lengthMode.currentIndex === 0
                     text: i18n("Max length:")
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: automaticMaxLength
                     x: page.secondControlX
                     width: page.compactControlWidth
@@ -373,12 +425,7 @@ QQC2.ScrollView {
                     from: page.minimumUsableLength
                     to: 4096
                     stepSize: 8
-                    editable: true
-                    textFromValue: function(value) { return value + " px"; }
-                    valueFromText: function(text) {
-                        const n = parseInt(text);
-                        return isNaN(n) ? value : n;
-                    }
+                    unit: " px"
                 }
 
                 QQC2.Label {
@@ -387,7 +434,7 @@ QQC2.ScrollView {
                     visible: lengthMode.currentIndex === 1
                     text: i18n("Length:")
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: fixedLength
                     x: page.secondControlX
                     width: page.compactControlWidth
@@ -396,12 +443,7 @@ QQC2.ScrollView {
                     from: page.minimumUsableLength
                     to: 4096
                     stepSize: 8
-                    editable: true
-                    textFromValue: function(value) { return value + " px"; }
-                    valueFromText: function(text) {
-                        const n = parseInt(text);
-                        return isNaN(n) ? value : n;
-                    }
+                    unit: " px"
                 }
             }
 
@@ -524,7 +566,7 @@ QQC2.ScrollView {
                     text: i18n("Transition:")
                     enabled: desktopRevealDuration.enabled
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: desktopRevealDuration
                     x: page.secondControlX
                     width: page.compactControlWidth
@@ -532,13 +574,8 @@ QQC2.ScrollView {
                     from: 0
                     to: 500
                     stepSize: 10
-                    editable: true
                     enabled: !page.inPanel && desktopAppearance.currentIndex === 2 && desktopRevealAnimation.currentIndex !== 0
-                    textFromValue: function(value) { return value + " ms"; }
-                    valueFromText: function(text) {
-                        const n = parseInt(text);
-                        return isNaN(n) ? value : n;
-                    }
+                    unit: " ms"
                 }
             }
 
@@ -552,20 +589,15 @@ QQC2.ScrollView {
                     text: i18n("Thickness:")
                     enabled: borderWidth.enabled
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: borderWidth
                     x: page.firstControlX
                     width: page.compactControlWidth
                     anchors.verticalCenter: parent.verticalCenter
                     from: 1
                     to: 12
-                    editable: true
                     enabled: showBorder.checked
-                    textFromValue: function(value) { return value + " px"; }
-                    valueFromText: function(text) {
-                        const n = parseInt(text);
-                        return isNaN(n) ? value : n;
-                    }
+                    unit: " px"
                 }
 
                 QQC2.Label {
@@ -574,7 +606,7 @@ QQC2.ScrollView {
                     text: i18n("Opacity:")
                     enabled: borderOpacity.enabled
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: borderOpacity
                     x: page.secondControlX
                     width: page.compactControlWidth
@@ -582,13 +614,8 @@ QQC2.ScrollView {
                     from: 5
                     to: 100
                     stepSize: 5
-                    editable: true
                     enabled: showBorder.checked
-                    textFromValue: function(value) { return value + "%"; }
-                    valueFromText: function(text) {
-                        const n = parseInt(text);
-                        return isNaN(n) ? value : n;
-                    }
+                    unit: "%"
                 }
             }
 
@@ -602,20 +629,15 @@ QQC2.ScrollView {
                     text: i18n("Corner radius:")
                     enabled: borderRadius.enabled
                 }
-                QQC2.SpinBox {
+                NumberField {
                     id: borderRadius
                     x: page.firstControlX
                     width: page.compactControlWidth
                     anchors.verticalCenter: parent.verticalCenter
                     from: 0
                     to: 32
-                    editable: true
                     enabled: showBorder.checked
-                    textFromValue: function(value) { return value + " px"; }
-                    valueFromText: function(text) {
-                        const n = parseInt(text);
-                        return isNaN(n) ? value : n;
-                    }
+                    unit: " px"
                 }
 
                 QQC2.Label {

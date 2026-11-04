@@ -9,6 +9,15 @@
     <entry name="launcherUrls" type="StringList">
       <default></default>
     </entry>
+    <entry name="singleLaunchersJson" type="String">
+      <default>[]</default>
+    </entry>
+    <entry name="showNames" type="Bool">
+      <default>false</default>
+    </entry>
+    <entry name="tabNameExceptions" type="String">
+      <default>[]</default>
+    </entry>
     <entry name="sections" type="Int">
       <default>1</default>
     </entry>

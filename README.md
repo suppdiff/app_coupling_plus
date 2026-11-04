@@ -1,143 +1,115 @@
 # App Coupling+
 
-A configurable application-launcher widget for KDE Plasma 6, built around independent launcher groups, drag-and-drop ordering, flexible sizing, and optional tabs.
-
+A configurable application-launcher widget for KDE Plasma 6 with independent launcher groups, optional tabs, drag-and-drop ordering, and flexible layouts.
 
 ![App Coupling+ panel](screenshots/1.jpeg) ![App Coupling+ tabs](screenshots/2.jpeg)
-
 ![App Coupling+ vertical panel](screenshots/3.jpeg) ![App Coupling+ desktop](screenshots/4.jpeg)
-
-
 ![App Coupling+ desktop hover](screenshots/5.webp)
 
 ## Features
 
-- Desktop appearance modes — Normal, Transparent, and Reveal on hover
-- Independent launcher lists — not tied to Plasma Favorites
-- Drag applications or `.desktop` launchers onto the widget
-- Drag launchers to reorder them
-- Duplicate launchers are supported and reorder correctly
-- Optional tabs, with a separate launcher list for each tab
-- Move or copy launchers between tabs from the right-click menu
-- Horizontal and vertical panel support, plus desktop-widget support
-- Configurable rows/columns, icon size, and horizontal/vertical spacing
-- Automatic, Fixed, and Fill panel sizing modes
-- Three overflow modes:
-  - **Paged arrows** — switch between fixed-size launcher pages
-  - **Popup overflow** — open hidden launchers from a `+N` button
-  - **Scroll** — wheel/flick through launchers
-- Optional system-theme outline with configurable thickness, opacity, and corner radius
-- Configurable tab placement, including mirrored panel placement and desktop Top/Bottom/Left/Right positioning
-- User-local installation under `~/.local`; the installer itself does not require `sudo`
-
-## Requirements
-
-App Coupling+ targets KDE Plasma 6 and includes a small native Qt/KDE helper, so it must be compiled for the system on which it is installed.
-
-The build currently requires:
-
-- C++20 compiler/toolchain
-- CMake 3.20+
-- Extra CMake Modules 6+
-- Qt 6.7+ (`Core`, `Gui`, `Qml`, `Widgets`)
-- KDE Frameworks 6 (`Config`, `CoreAddons`, `KIO`, `Service`)
-- Plasma 6 development files
-
-On Arch Linux / CachyOS, the usual build tools can be installed with:
-
-```bash
-sudo pacman -S --needed base-devel cmake extra-cmake-modules
-```
-
-The remaining Qt/KDE runtime and development dependencies are normally already present on a Plasma development system; CMake will report anything missing.
+- **Appearance:** Normal, Transparent, or Reveal on hover, with optional theme-colored outlines.
+- **Launchers:** Drag to reorder, duplicate, and customize individual names and icons.
+- **Tabs:** Independent launcher lists, flexible positioning, Shift+scroll navigation, and optional per-tab name labels.
+- **Layout:** Adjustable rows, columns, icon sizes, spacing, and Automatic/Fixed/Fill sizing.
+- **Overflow:** Paged arrows, `+N` popup, or scrolling.
 
 ## Installation
 
-### Arch Linux / CachyOS package
+**KDE Plasma 6 is required.**
 
-For a normal installation, download the latest `.pkg.tar.zst` package from the GitHub Releases page, then install it with pacman.
+Get the matching package from [GitHub Releases](https://github.com/suppdiff/app_coupling_plus/releases).
 
-> **Important:** Rename the directories and the `*.pkg.tar.zst` filename below to match your actual download location and downloaded package filename.
+### Arch Linux
 
-```bash
+```
 cd ~/Downloads
-sudo pacman -U ./plasma6-applets-app-coupling-plus-<version>-<pkgrel>-x86_64.pkg.tar.zst
+sudo pacman -U ./plasma6-applets-app-coupling-plus-1.2.0-1-x86_64.pkg.tar.zst
 ```
 
-This installs App Coupling+ system-wide under `/usr` and lets pacman manage the installation.
+### Fedora
 
-### Local source installation
-
-For development or a user-local installation, clone or download the source, enter the project directory, then run:
-
-```bash
-./install-local.sh
+```
+cd ~/Downloads
+sudo dnf install ./app-coupling-plus-1.2.0-1.*.x86_64.rpm
 ```
 
-The installer builds App Coupling+ and installs it under `~/.local`. It does not install files into `/usr` and does not require `sudo`.
+Use an RPM built and verified for your Fedora version.
 
-Because App Coupling+ includes a native QML plugin, restart Plasma after installing or updating it:
+### Debian / Ubuntu
 
-```bash
+```
+cd ~/Downloads
+sudo apt install ./app-coupling-plus_1.2.0-1_amd64.deb
+```
+
+Use a DEB built and verified for your specific Debian/Ubuntu release.
+
+After installing or upgrading, restart the Plasma shell to load the native plugin:
+
+```
 systemctl --user restart plasma-plasmashell.service
 ```
 
-A full logout is normally not required.
+Then select **App Coupling+** in Plasma's **Add Widgets** interface.
 
-Then add **App Coupling+** from Plasma's **Add Widgets** interface.
+## Getting started
 
-## Updating
+Drag applications or `.desktop` files onto App Coupling+ to add launchers. Right-click a launcher to **Edit** its name or icon, move/copy it, or remove it. Drag launchers to reorder them.
 
-Pull/download the newer source and run `./install-local.sh` again, then restart `plasma-plasmashell.service` as shown above.
+Use **Configure App Coupling+** to customize appearance, layout, tabs, and overflow behavior. Enable **Show names** to display labels below icons, and use **Show/hide app names** to control visibility per tab.
 
-Existing widget instances and settings are preserved as long as the plugin ID remains:
+Each tab has its own launchers. Use **Shift + scroll** over the tab bar to switch tabs. Changes are saved automatically and persist across Plasma restarts.
 
-```text
-io.github.suppdiff.appcouplingplus
+## Updating and uninstalling
+
+To update a system installation, install the newer distro package with your package manager, then restart Plasma as above. Existing widget configurations are preserved under the unchanged widget ID `io.github.suppdiff.appcouplingplus`.
+
+To uninstall a system package, use your distro's package manager (`pacman -R plasma6-applets-app-coupling-plus`, `dnf remove app-coupling-plus`, or `apt remove app-coupling-plus`). Uninstalling the package does not intentionally delete your saved Plasma widget configuration.
+
+A user-local source install under `~/.local` may override a system package. If you previously used `./install-local.sh`, run `./uninstall-local.sh` from the source tree to remove that local install before testing the system package. Restart Plasma afterward.
+
+## Building from source
+
+The native helper must be compiled against compatible Qt 6/KDE Frameworks 6 libraries. Building requires:
+
+- A C++20 compiler and CMake 3.20+
+- Extra CMake Modules 6+
+- Qt 6.7+ development components (`Core`, `Gui`, `Qml`, `Widgets`)
+- KDE Frameworks 6 development components (`Config`, `CoreAddons`, `KIO`, `Service`, `IconThemes`, including `IconWidgets`)
+- Plasma 6 development files
+
+On Arch/CachyOS, install basic build tools with:
+
+```
+sudo pacman -S --needed base-devel cmake extra-cmake-modules
 ```
 
-## Basic usage
+Additional Qt/KDE development packages may be needed; CMake will report missing components. In a source checkout, `./install-local.sh` builds and installs under `~/.local` without requiring `sudo`. To make a native package on a supported build host, use:
 
-Drag an application or `.desktop` launcher onto App Coupling+ to add it. Drag existing launchers to rearrange them, and right-click a launcher for additional actions.
-
-When tabs are enabled, each tab owns an independent launcher list. Tabs can be renamed, duplicated, moved, or removed, and launchers can be moved or copied between tabs.
-
-For panels, Plasma controls the panel thickness while App Coupling+ controls its length along the panel. If the configured launchers do not fit, use Paged arrows, Popup overflow, or Scroll mode instead of silently shrinking the icons.
-
-## Uninstall
-
-If App Coupling+ was installed with `install-local.sh`, run the matching uninstaller from the source tree:
-
-```bash
-./uninstall-local.sh
+```
+./packaging/build-package.sh arch ./dist     # Arch/CachyOS
+# ./packaging/build-package.sh fedora ./dist # on Fedora
+# ./packaging/build-package.sh debian ./dist # on Debian/Ubuntu
 ```
 
-The uninstaller removes the user-local App Coupling+ plasmoid, its QML module, and its managed environment entry. It leaves Plasma widget configuration and any pacman-managed system package untouched. Restart Plasma afterward if the widget was loaded.
+Only ship binary packages after validating them on the intended distro and architecture.
 
 ## Security and privacy
 
-- App Coupling+ does not expose arbitrary shell-command execution to QML.
+- App Coupling+ has no background telemetry or analytics.
 - It does not read browser cookies or credentials.
-- It does not perform background telemetry or analytics.
-- Launching is handled through KDE/Qt APIs rather than shelling out to arbitrary commands.
-- The local installer writes only App Coupling+ files under `~/.local` plus its own user environment entry used to expose the QML module path.
+- Launching uses KDE/Qt APIs, not arbitrary shell-command execution exposed to QML.
+- Local source installation manages only its files under `~/.local` and its QML-import environment entry.
 
 ## Official source and third-party builds
 
-This repository, owned by **suppdiff**, is the canonical upstream source for App Coupling+.
-
-Forks are allowed by the license, but forks, repackaged builds, and downloads distributed elsewhere are **unofficial unless explicitly linked or endorsed by this repository**. A third-party build should not be assumed to be an official App Coupling+ release merely because it uses the same source code or project name.
+This repository, owned by **suppdiff**, is the canonical upstream source. Forks and repackaged builds are permitted by the license but are unofficial unless linked or endorsed by this repository.
 
 ## License
 
-App Coupling+ is free software licensed under the **GNU General Public License, version 3 or any later version** (`GPL-3.0-or-later`). See [`LICENSE`](LICENSE) for the full license text.
-
-Copyright © 2026 suppdiff.
-
-The GPL allows use, modification, redistribution, and commercial redistribution under its terms. Distributed GPL-covered modifications must preserve the recipients' GPL rights and corresponding-source obligations.
-
-Third-party libraries and KDE/Qt components used by App Coupling+ remain under their respective licenses.
+App Coupling+ is licensed under **GPL-3.0-or-later**; see [`LICENSE`](LICENSE) for the full text. Copyright © 2026 suppdiff. Third-party Qt/KDE components have their own licenses.
 
 ## Contributing
 
-Issues and pull requests are welcome. Contributions submitted for inclusion in App Coupling+ must be compatible with the project's `GPL-3.0-or-later` license.
+Issues and pull requests are welcome. Contributions submitted for inclusion must be compatible with `GPL-3.0-or-later`.

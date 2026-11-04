@@ -3,11 +3,15 @@
 
 #include "launcherbridge.h"
 
+#include <QFileDialog>
 #include <QFileInfo>
+#include <QImageReader>
 #include <QMimeDatabase>
 #include <QMimeType>
+#include <QUuid>
 
 #include <KDesktopFile>
+#include <KIconDialog>
 #include <KJob>
 #include <KJobUiDelegate>
 #include <KOpenWithDialog>
@@ -18,6 +22,17 @@
 LauncherBridge::LauncherBridge(QObject *parent)
     : QObject(parent)
 {
+}
+
+LauncherBridge::~LauncherBridge()
+{
+    delete m_iconPicker.data();
+    delete m_applicationChooser.data();
+}
+
+QString LauncherBridge::makeKey() const
+{
+    return QUuid::createUuid().toString(QUuid::WithoutBraces);
 }
 
 QVariantMap LauncherBridge::launcherData(const QUrl &url) const
@@ -103,7 +118,12 @@ void LauncherBridge::openUrl(const QUrl &url)
 
 void LauncherBridge::addLauncher()
 {
+    if (m_applicationChooser && m_applicationChooser->isVisible()) {
+        m_applicationChooser->activateWindow();
+        return;
+    }
     auto *dialog = new KOpenWithDialog();
+    m_applicationChooser = dialog;
     dialog->setModal(false);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->hideRunInTerminal();
@@ -122,4 +142,50 @@ void LauncherBridge::addLauncher()
     });
 
     dialog->show();
+}
+
+void LauncherBridge::closeIconPicker()
+{
+    const auto picker = m_iconPicker;
+    m_iconPicker.clear();
+    if (picker) {
+        picker->disconnect(this);
+        picker->reject();
+        if (picker) {
+            picker->deleteLater();
+        }
+    }
+}
+
+void LauncherBridge::chooseIcon(bool localFile)
+{
+    closeIconPicker();
+    if (localFile) {
+        auto *picker = new QFileDialog;
+        m_iconPicker = picker;
+        picker->setAttribute(Qt::WA_DeleteOnClose);
+        picker->setFileMode(QFileDialog::ExistingFile);
+        QStringList imageTypes;
+        for (const auto &mimeType : QImageReader::supportedMimeTypes()) {
+            imageTypes.push_back(QString::fromLatin1(mimeType));
+        }
+        picker->setMimeTypeFilters(imageTypes);
+        connect(picker, &QFileDialog::fileSelected, this, [this, picker](const QString &path) {
+            if (m_iconPicker == picker && !path.isEmpty()) {
+                Q_EMIT iconChosen(QUrl::fromLocalFile(path).toString());
+            }
+        });
+        picker->show();
+    } else {
+        auto *picker = new KIconDialog;
+        m_iconPicker = picker;
+        picker->setAttribute(Qt::WA_DeleteOnClose);
+        picker->setup(KIconLoader::Desktop, KIconLoader::Any, false, 0, false, true);
+        connect(picker, &KIconDialog::newIconName, this, [this, picker](const QString &name) {
+            if (m_iconPicker == picker && !name.isEmpty()) {
+                Q_EMIT iconChosen(name);
+            }
+        });
+        picker->showDialog();
+    }
 }

@@ -16,6 +16,7 @@ target_link_libraries(appcouplinglauncherplugin PRIVATE
     KF6::CoreAddons
     KF6::KIOGui
     KF6::KIOWidgets
+    KF6::IconWidgets
     KF6::Service
 )
 

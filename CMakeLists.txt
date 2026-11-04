@@ -3,7 +3,7 @@
 
 cmake_minimum_required(VERSION 3.20)
 
-project(AppCouplingPlus VERSION 1.0.4 LANGUAGES CXX)
+project(AppCouplingPlus VERSION 1.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,7 +16,7 @@ include(KDEInstallDirs6)
 include(FeatureSummary)
 
 find_package(Qt6 6.7 REQUIRED COMPONENTS Core Gui Qml Widgets)
-find_package(KF6 6.0 REQUIRED COMPONENTS Config CoreAddons KIO Service)
+find_package(KF6 6.0 REQUIRED COMPONENTS Config CoreAddons KIO Service IconThemes)
 find_package(Plasma 6.0 REQUIRED)
 
 # find_package(Plasma) provides plasma_install_package() on Plasma 6.
@@ -24,3 +24,11 @@ plasma_install_package(package io.github.suppdiff.appcouplingplus)
 add_subdirectory(plugin)
 
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
+
+option(APP_COUPLING_TESTS "Build native regression tests" OFF)
+if(APP_COUPLING_TESTS)
+    enable_testing()
+    find_package(Qt6 6.7 REQUIRED COMPONENTS Quick QuickTest Test)
+    find_package(PlasmaQuick REQUIRED)
+    add_subdirectory(tests)
+endif()

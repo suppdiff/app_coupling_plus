@@ -1,0 +1,21 @@
+pkgname=plasma6-applets-app-coupling-plus
+pkgver=@VERSION@
+pkgrel=1
+pkgdesc='Configurable application launcher for KDE Plasma 6'
+arch=(x86_64)
+url='https://github.com/suppdiff/app_coupling_plus'
+license=(GPL-3.0-or-later)
+depends=(qt6-base qt6-declarative kconfig kcoreaddons kdeclarative kio kservice kiconthemes kirigami libplasma)
+makedepends=(cmake extra-cmake-modules)
+source=("app-coupling-plus-${pkgver}.tar.gz")
+sha256sums=('@SHA256@')
+
+build() {
+    cmake -S "$srcdir/app-coupling-plus-$pkgver" -B "$srcdir/build" \
+        -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DKDE_INSTALL_USE_QT_SYS_PATHS=ON
+    cmake --build "$srcdir/build"
+}
+
+package() {
+    DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}

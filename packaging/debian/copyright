@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: App Coupling+
+Source: https://github.com/suppdiff/app_coupling_plus
+
+Files: *
+Copyright: 2026 suppdiff
+License: GPL-3.0-or-later
+ This package is distributed under the GNU General Public License,
+ version 3 or any later version. On Debian systems the complete text of
+ version 3 is available at /usr/share/common-licenses/GPL-3.

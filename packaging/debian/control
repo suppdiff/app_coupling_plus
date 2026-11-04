@@ -1,0 +1,21 @@
+Source: app-coupling-plus
+Section: kde
+Priority: optional
+Maintainer: suppdiff <suppdiff@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13),
+ cmake (>= 3.20), extra-cmake-modules,
+ qt6-base-dev (>= 6.7), qt6-declarative-dev,
+ libkf6config-dev, libkf6coreaddons-dev, libkf6kio-dev,
+ libkf6service-dev, libkf6iconthemes-dev, libplasma-dev
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/suppdiff/app_coupling_plus
+
+Package: app-coupling-plus
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ plasma-workspace (>= 4:6.0), qml6-module-org-kde-draganddrop,
+ qml6-module-org-kde-kirigami
+Description: configurable application launcher for KDE Plasma 6
+ App Coupling+ offers independent launcher lists, tabs, configurable overflow
+ and per-launcher appearance for KDE Plasma 6.

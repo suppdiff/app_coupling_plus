@@ -1,0 +1,42 @@
+Name:           app-coupling-plus
+Version:        @VERSION@
+Release:        1%{?dist}
+Summary:        Configurable application launcher for KDE Plasma 6
+License:        GPL-3.0-or-later
+URL:            https://github.com/suppdiff/app_coupling_plus
+Source0:        %{name}-%{version}.tar.gz
+
+BuildRequires:  cmake >= 3.20
+BuildRequires:  gcc-c++
+BuildRequires:  extra-cmake-modules
+BuildRequires:  qt6-qtbase-devel >= 6.7
+BuildRequires:  qt6-qtdeclarative-devel
+BuildRequires:  kf6-kconfig-devel
+BuildRequires:  kf6-kcoreaddons-devel
+BuildRequires:  kf6-kio-devel
+BuildRequires:  kf6-kservice-devel
+BuildRequires:  kf6-kiconthemes-devel
+BuildRequires:  libplasma-devel
+Requires:       kf6-kdeclarative
+Requires:       kf6-kirigami
+Requires:       libplasma
+
+%description
+App Coupling+ is an independent application launcher with optional tabs,
+configurable overflow and per-launcher appearance for KDE Plasma 6.
+
+%prep
+%autosetup
+
+%build
+%cmake -DKDE_INSTALL_USE_QT_SYS_PATHS=ON
+%cmake_build
+
+%install
+%cmake_install
+
+%files
+%license LICENSE
+%doc README.md CHANGELOG.md
+%{_datadir}/plasma/plasmoids/io.github.suppdiff.appcouplingplus/
+%{_libdir}/qt6/qml/appcoupling/launcher/

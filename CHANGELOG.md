@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 - 2026-11-04
+
+- Custom names and KDE/system/local-image icons for individual launchers, including independent duplicate launchers.
+- Optional launcher labels below icons with per-tab name visibility controls.
+- Shift + scroll tab navigation and improved tab, overflow, and launcher interaction behavior.
+- Improved launcher and tab persistence, including safer Settings Apply behavior when tabs change while Settings is open.
+- Improved native icon picker handling, numeric settings editing, grid capacity calculations, and package dependencies.
+- Packaging support for Arch, Fedora, and Debian/Ubuntu.
 
 ## 1.0.4 - 2026-09-15
 

@@ -4,6 +4,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import "LauncherState.js" as State
 import QtQuick.Layouts
 import QtQuick.Controls as QQC2
 import org.kde.plasma.plasmoid
@@ -29,8 +30,12 @@ PlasmoidItem {
     readonly property int effectiveIconSize: requestedIconSize
     readonly property int horizontalSpacing: Math.max(0, Plasmoid.configuration.horizontalSpacing)
     readonly property int verticalSpacing: Math.max(0, Plasmoid.configuration.verticalSpacing)
-    readonly property int cellWidth: requestedIconSize + horizontalSpacing
-    readonly property int cellHeight: requestedIconSize + verticalSpacing
+    readonly property int tileWidth: showLabels ? Math.max(requestedIconSize, 64) : requestedIconSize
+    readonly property int tileHeight: requestedIconSize + (showLabels ? 17 : 0)
+    readonly property int primaryTileSize: horizontalLayout ? tileWidth : tileHeight
+    readonly property int crossTileSize: horizontalLayout ? tileHeight : tileWidth
+    readonly property int cellWidth: tileWidth + horizontalSpacing
+    readonly property int cellHeight: tileHeight + verticalSpacing
     readonly property int primaryCellExtent: horizontalLayout ? cellWidth : cellHeight
     readonly property int primarySpacing: horizontalLayout ? horizontalSpacing : verticalSpacing
     readonly property int crossSpacing: horizontalLayout ? verticalSpacing : horizontalSpacing
@@ -126,45 +131,45 @@ PlasmoidItem {
     readonly property real launcherHeight: Math.max(1, content.height - (tabsCanShow && !tabStripVertical ? tabReserve : 0))
 
     readonly property int configuredPrimarySlots: Math.max(1, Math.ceil(launcherModel.count / sectionCount))
-    function extentForSlots(slots, spacing) {
+    function extentForSlots(slots, spacing, tileSize) {
         const count = Math.max(1, slots);
-        return count * requestedIconSize + Math.max(0, count - 1) * spacing;
+        return count * tileSize + Math.max(0, count - 1) * spacing;
     }
 
-    function slotsForExtent(extent, spacing) {
-        return Math.max(1, Math.floor((Math.max(0, extent) + spacing) / Math.max(1, requestedIconSize + spacing)));
+    function slotsForExtent(extent, spacing, tileSize) {
+        return Math.max(1, Math.floor((Math.max(0, extent) + spacing) / Math.max(1, tileSize + spacing)));
     }
 
-    readonly property int fullPrimaryExtent: extentForSlots(configuredPrimarySlots, primarySpacing) + contentInset * 2
+    readonly property int fullPrimaryExtent: extentForSlots(configuredPrimarySlots, primarySpacing, primaryTileSize) + contentInset * 2
     readonly property int navigationExtent: Math.max(20, Math.min(30, requestedIconSize))
     // Keep at least one launcher cell usable, plus any overflow controls that must coexist with it.
     readonly property int minimumControlExtent: overflowMode === 0 ? navigationExtent * 2 : (overflowMode === 1 ? navigationExtent : 0)
-    readonly property int minimumPrimaryExtent: requestedIconSize + minimumControlExtent + contentInset * 2
+    readonly property int minimumPrimaryExtent: primaryTileSize + minimumControlExtent + contentInset * 2
     readonly property int autoPrimaryExtent: Math.max(minimumPrimaryExtent, Math.min(fullPrimaryExtent, Math.max(minimumPrimaryExtent, automaticMaxLength)))
     readonly property int fixedPrimaryExtent: Math.max(minimumPrimaryExtent, configuredFixedLength)
     readonly property int preferredPrimaryExtent: lengthMode === 1 ? fixedPrimaryExtent : autoPrimaryExtent
-    readonly property int configuredCrossExtent: extentForSlots(sectionCount, crossSpacing) + contentInset * 2
+    readonly property int configuredCrossExtent: extentForSlots(sectionCount, crossSpacing, crossTileSize) + contentInset * 2
     readonly property int desktopWidthExtra: !inPanel && tabsEnabled && tabStripVertical ? tabReserve : 0
     readonly property int desktopHeightExtra: !inPanel && tabsEnabled && !tabStripVertical ? tabReserve : 0
 
     // Overflow is calculated from the actual launcher area. Icons never shrink to make the grid fit.
     readonly property real contentPrimaryAvailable: Math.max(1, horizontalLayout ? launcherWidth : launcherHeight)
     readonly property real contentCrossAvailable: Math.max(1, horizontalLayout ? launcherHeight : launcherWidth)
-    readonly property int crossGridExtent: Math.max(1, Math.min(extentForSlots(sectionCount, crossSpacing), Math.floor(contentCrossAvailable)))
-    readonly property int visibleCrossSlots: slotsForExtent(crossGridExtent, crossSpacing)
-    readonly property int rawVisiblePrimarySlots: slotsForExtent(contentPrimaryAvailable, primarySpacing)
+    readonly property int crossGridExtent: Math.max(1, Math.min(extentForSlots(sectionCount, crossSpacing, crossTileSize), Math.floor(contentCrossAvailable)))
+    readonly property int visibleCrossSlots: slotsForExtent(crossGridExtent, crossSpacing, crossTileSize)
+    readonly property int rawVisiblePrimarySlots: slotsForExtent(contentPrimaryAvailable, primarySpacing, primaryTileSize)
     readonly property bool rawOverflow: launcherModel.count > rawVisiblePrimarySlots * visibleCrossSlots
     readonly property int leadingReserve: overflowMode === 0 && rawOverflow ? navigationExtent : 0
     readonly property int trailingReserve: rawOverflow ? (overflowMode === 0 ? navigationExtent : (overflowMode === 1 ? navigationExtent : 0)) : 0
     readonly property int gridPrimaryExtent: Math.max(1, Math.floor(contentPrimaryAvailable - leadingReserve - trailingReserve))
-    readonly property int visiblePrimarySlots: slotsForExtent(gridPrimaryExtent, primarySpacing)
+    readonly property int visiblePrimarySlots: slotsForExtent(gridPrimaryExtent, primarySpacing, primaryTileSize)
     readonly property int pageCapacity: Math.max(1, visiblePrimarySlots * visibleCrossSlots)
     readonly property int pageCount: Math.max(1, Math.ceil(launcherModel.count / pageCapacity))
     readonly property bool hasOverflow: launcherModel.count > pageCapacity
     readonly property int hiddenCount: Math.max(0, launcherModel.count - pageCapacity)
     readonly property int pagePixelExtent: visiblePrimarySlots * primaryCellExtent
     readonly property int usedPrimarySlots: Math.max(1, Math.ceil(launcherModel.count / visibleCrossSlots))
-    readonly property int usedPrimaryExtent: Math.min(gridPrimaryExtent, extentForSlots(usedPrimarySlots, primarySpacing))
+    readonly property int usedPrimaryExtent: Math.min(gridPrimaryExtent, extentForSlots(usedPrimarySlots, primarySpacing, primaryTileSize))
     readonly property int alignedGridPrimaryExtent: hasOverflow ? gridPrimaryExtent : usedPrimaryExtent
     readonly property int primaryAlignmentSlack: Math.max(0, gridPrimaryExtent - alignedGridPrimaryExtent)
     readonly property int primaryAlignmentOffset: primaryLauncherAlignment === 1
@@ -180,8 +185,12 @@ PlasmoidItem {
     property int internalDragIndex: -1
     property int internalDragOriginalIndex: -1
     property int activeTab: 0
-    property int renameTabIndex: -1
-    property int transferLauncherIndex: -1
+    property string displayedTabKey: ""
+    readonly property var labelExceptions: State.exceptions(Plasmoid.configuration.tabNameExceptions)
+    readonly property bool showLabels: Plasmoid.configuration.showNames !==
+        Boolean(tabsEnabled && labelExceptions[displayedTabKey])
+    property string renameTabKey: ""
+    property string transferLauncherKey: ""
     property bool transferCopyMode: false
 
     // Horizontal panels control width; vertical panels control height. Plasma controls panel thickness.
@@ -219,7 +228,7 @@ PlasmoidItem {
         }
 
         const primarySlots = Math.max(1, Math.ceil(launcherModel.count / visibleCrossSlots));
-        const modelPrimaryExtent = root.extentForSlots(primarySlots, root.primarySpacing);
+        const modelPrimaryExtent = root.extentForSlots(primarySlots, root.primarySpacing, root.primaryTileSize);
         if (horizontalLayout) {
             const maxOffset = Math.max(0, modelPrimaryExtent - grid.width);
             grid.contentX = Math.max(0, Math.min(maxOffset, grid.contentX + delta));
@@ -229,132 +238,147 @@ PlasmoidItem {
         }
     }
 
-    function rebuildOverflowModel() {
+    function rebuildOverflowModel(opening) {
         overflowModel.clear();
+        if (overflowMode !== 1 || (!opening && !overflowDialog.visible)) {
+            overflowDialog.visible = false;
+            return;
+        }
         const start = Math.min(pageCapacity, launcherModel.count);
         for (let i = start; i < launcherModel.count; ++i) {
-            overflowModel.append({
-                launcherUrl: launcherModel.get(i).launcherUrl,
-                sourceIndex: i
-            });
+            overflowModel.append(launcherModel.recordAt(i));
         }
         if (overflowModel.count === 0) {
             overflowDialog.visible = false;
         }
     }
 
-    function parsedUrls(jsonText) {
-        try {
-            const value = JSON.parse(jsonText || "[]");
-            if (!Array.isArray(value)) {
-                return [];
-            }
-            const result = [];
-            for (let i = 0; i < value.length; ++i) {
-                const url = value[i] === undefined || value[i] === null ? "" : value[i].toString();
-                if (url.length > 0) {
-                    result.push(url);
-                }
-            }
-            return result;
-        } catch (error) {
-            return [];
+    function makeKey() {
+        return launcherBridge.makeKey();
+    }
+
+    function loadSingleList() {
+        const config = Plasmoid.configuration;
+        const records = State.reconcile(config.launcherUrls, State.list(config.singleLaunchersJson), root.makeKey);
+        launcherModel.load(records);
+        saveSingleDetails();
+    }
+
+    function saveSingleDetails() {
+        const data = JSON.stringify(launcherModel.records());
+        if (data !== Plasmoid.configuration.singleLaunchersJson) {
+            Plasmoid.configuration.singleLaunchersJson = data;
         }
     }
 
     function loadTabs() {
         tabsModel.clear();
-        let parsed = [];
-        try {
-            parsed = JSON.parse(Plasmoid.configuration.tabsJson || "[]");
-        } catch (error) {
-            parsed = [];
+        const config = Plasmoid.configuration;
+        const tabs = State.list(config.tabsJson);
+        if (!tabs.length) {
+            tabs.push({ name: i18n("Apps"), launcherUrls: Array.from(config.launcherUrls),
+                        launchers: State.list(config.singleLaunchersJson) });
         }
-
-        if (!Array.isArray(parsed) || parsed.length === 0) {
-            const legacy = [];
-            const configured = Plasmoid.configuration.launcherUrls;
-            for (let i = 0; i < configured.length; ++i) {
-                legacy.push(configured[i].toString());
-            }
-            parsed = [{ name: i18n("Apps"), launcherUrls: legacy }];
-        }
-
-        for (let i = 0; i < parsed.length; ++i) {
-            const entry = parsed[i] || {};
-            const urls = Array.isArray(entry.launcherUrls) ? entry.launcherUrls : [];
+        const tabKeys = new Set();
+        const launcherKeys = new Set();
+        for (let i = 0; i < tabs.length; ++i) {
+            const entry = tabs[i] || {};
+            const key = typeof entry.key === "string" && entry.key && !tabKeys.has(entry.key)
+                ? entry.key : makeKey();
+            tabKeys.add(key);
+            const records = State.reconcile(Array.isArray(entry.launcherUrls) ? entry.launcherUrls : [],
+                Array.isArray(entry.launchers) ? entry.launchers : [], root.makeKey, launcherKeys);
             tabsModel.append({
-                name: entry.name && entry.name.toString().trim().length > 0 ? entry.name.toString() : i18n("Tab %1", i + 1),
-                launcherUrlsJson: JSON.stringify(urls)
+                key: key,
+                name: typeof entry.name === "string" && entry.name.trim() ? entry.name : i18n("Tab %1", i + 1),
+                entriesJson: JSON.stringify(records)
             });
         }
-
-        activeTab = Math.max(0, Math.min(Plasmoid.configuration.selectedTab, tabsModel.count - 1));
+        activeTab = Math.max(0, Math.min(config.selectedTab, tabsModel.count - 1));
         saveTabsConfiguration();
     }
 
     function saveTabsConfiguration() {
         const result = [];
         for (let i = 0; i < tabsModel.count; ++i) {
-            const entry = tabsModel.get(i);
-            result.push({
-                name: entry.name,
-                launcherUrls: parsedUrls(entry.launcherUrlsJson)
-            });
+            const tab = tabsModel.get(i);
+            const records = State.list(tab.entriesJson);
+            result.push({ key: tab.key, name: tab.name,
+                          launcherUrls: records.map(record => record.launcherUrl), launchers: records });
         }
-        Plasmoid.configuration.tabsJson = JSON.stringify(result);
-        Plasmoid.configuration.selectedTab = activeTab;
+        const config = Plasmoid.configuration;
+        const data = JSON.stringify(result);
+        if (config.tabsJson !== data) {
+            config.tabsJson = data;
+        }
+        config.selectedTab = activeTab;
     }
 
     function storeCurrentTabLaunchers() {
-        if (tabsModel.count === 0 || activeTab < 0 || activeTab >= tabsModel.count) {
-            return;
+        if (activeTab >= 0 && activeTab < tabsModel.count) {
+            tabsModel.setProperty(activeTab, "entriesJson", JSON.stringify(launcherModel.records()));
+            saveTabsConfiguration();
         }
-        tabsModel.setProperty(activeTab, "launcherUrlsJson", JSON.stringify(launcherModel.urls()));
-        saveTabsConfiguration();
     }
 
     function loadActiveTabLaunchers() {
-        if (tabsModel.count === 0) {
+        if (!tabsModel.count) {
+            displayedTabKey = "";
             launcherModel.load([]);
             return;
         }
         activeTab = Math.max(0, Math.min(activeTab, tabsModel.count - 1));
-        launcherModel.load(parsedUrls(tabsModel.get(activeTab).launcherUrlsJson));
+        appearanceDialog.visible = false;
+        const tab = tabsModel.get(activeTab);
+        displayedTabKey = tab.key;
+        launcherModel.load(State.list(tab.entriesJson));
         Plasmoid.configuration.selectedTab = activeTab;
         resetOverflowPosition();
     }
 
     function switchTab(index) {
-        if (!tabsEnabled || index < 0 || index >= tabsModel.count || index === activeTab) {
+        if (!tabsEnabled || dragging || index < 0 || index >= tabsModel.count || index === activeTab) {
             return;
         }
-        storeCurrentTabLaunchers();
         activeTab = index;
         loadActiveTabLaunchers();
     }
 
-    function addTab() {
-        if (!tabsEnabled) {
+    function setTabException(key, invert) {
+        const rules = State.exceptions(Plasmoid.configuration.tabNameExceptions);
+        if (Boolean(rules[key]) === invert) {
             return;
         }
-        storeCurrentTabLaunchers();
-        tabsModel.append({ name: i18n("New Tab"), launcherUrlsJson: "[]" });
+        if (invert) {
+            rules[key] = true;
+        } else {
+            delete rules[key];
+        }
+        Plasmoid.configuration.tabNameExceptions = State.encodeExceptions(rules);
+    }
+
+    function addTab() {
+        if (!tabsEnabled || dragging) {
+            return;
+        }
+        tabsModel.append({ key: makeKey(), name: i18n("New Tab"), entriesJson: "[]" });
         activeTab = tabsModel.count - 1;
         saveTabsConfiguration();
         loadActiveTabLaunchers();
     }
 
     function duplicateTab(index) {
-        if (index < 0 || index >= tabsModel.count) {
+        if (dragging || index < 0 || index >= tabsModel.count) {
             return;
         }
-        storeCurrentTabLaunchers();
         const entry = tabsModel.get(index);
+        const key = makeKey();
         tabsModel.insert(index + 1, {
+            key: key,
             name: i18n("%1 Copy", entry.name),
-            launcherUrlsJson: entry.launcherUrlsJson
+            entriesJson: JSON.stringify(State.copyLaunchers(State.list(entry.entriesJson), root.makeKey))
         });
+        setTabException(key, Boolean(labelExceptions[entry.key]));
         activeTab = index + 1;
         saveTabsConfiguration();
         loadActiveTabLaunchers();
@@ -362,10 +386,9 @@ PlasmoidItem {
 
     function moveTab(index, delta) {
         const target = index + delta;
-        if (index < 0 || index >= tabsModel.count || target < 0 || target >= tabsModel.count) {
+        if (dragging || index < 0 || index >= tabsModel.count || target < 0 || target >= tabsModel.count) {
             return;
         }
-        storeCurrentTabLaunchers();
         tabsModel.move(index, target, 1);
         if (activeTab === index) {
             activeTab = target;
@@ -376,12 +399,13 @@ PlasmoidItem {
     }
 
     function removeTab(index) {
-        if (tabsModel.count <= 1 || index < 0 || index >= tabsModel.count) {
+        if (dragging || tabsModel.count <= 1 || index < 0 || index >= tabsModel.count) {
             return;
         }
-        storeCurrentTabLaunchers();
+        const removedKey = tabsModel.get(index).key;
         const wasActive = index === activeTab;
         tabsModel.remove(index, 1);
+        setTabException(removedKey, false);
         if (activeTab > index) {
             activeTab -= 1;
         } else if (activeTab >= tabsModel.count) {
@@ -397,7 +421,7 @@ PlasmoidItem {
         if (index < 0 || index >= tabsModel.count) {
             return;
         }
-        renameTabIndex = index;
+        renameTabKey = tabsModel.get(index).key;
         renameField.text = tabsModel.get(index).name;
         renameDialog.visible = true;
         Qt.callLater(function() {
@@ -407,9 +431,16 @@ PlasmoidItem {
     }
 
     function commitRenameTab() {
-        if (renameTabIndex < 0 || renameTabIndex >= tabsModel.count) {
+        let renameTabIndex = -1;
+        for (let i = 0; i < tabsModel.count; ++i) {
+            if (tabsModel.get(i).key === renameTabKey) {
+                renameTabIndex = i;
+                break;
+            }
+        }
+        if (renameTabIndex < 0) {
             renameDialog.visible = false;
-            renameTabIndex = -1;
+            renameTabKey = "";
             return;
         }
         const cleaned = renameField.text.trim();
@@ -418,41 +449,41 @@ PlasmoidItem {
             saveTabsConfiguration();
         }
         renameDialog.visible = false;
-        renameTabIndex = -1;
+        renameTabKey = "";
     }
 
     function beginLauncherTransfer(index, copyMode) {
         if (!tabsEnabled || tabsModel.count < 2 || index < 0 || index >= launcherModel.count) {
             return;
         }
-        transferLauncherIndex = index;
+        transferLauncherKey = launcherModel.get(index).launcherKey;
         transferCopyMode = copyMode;
         transferDialog.visible = true;
     }
 
     function transferLauncherToTab(targetTabIndex) {
-        if (!tabsEnabled || transferLauncherIndex < 0 || transferLauncherIndex >= launcherModel.count ||
+        const sourceIndex = launcherModel.indexOfKey(transferLauncherKey);
+        if (!tabsEnabled || dragging || sourceIndex < 0 ||
                 targetTabIndex < 0 || targetTabIndex >= tabsModel.count || targetTabIndex === activeTab) {
             transferDialog.visible = false;
-            transferLauncherIndex = -1;
+            transferLauncherKey = "";
             return;
         }
 
-        const url = launcherModel.get(transferLauncherIndex).launcherUrl;
-        const destinationUrls = parsedUrls(tabsModel.get(targetTabIndex).launcherUrlsJson);
-        destinationUrls.push(url);
-        tabsModel.setProperty(targetTabIndex, "launcherUrlsJson", JSON.stringify(destinationUrls));
-
-        if (!transferCopyMode) {
-            launcherModel.remove(transferLauncherIndex, 1);
+        const record = launcherModel.recordAt(sourceIndex);
+        if (transferCopyMode) {
+            record.launcherKey = makeKey();
+        } else {
+            launcherModel.remove(sourceIndex, 1);
         }
-
-        tabsModel.setProperty(activeTab, "launcherUrlsJson", JSON.stringify(launcherModel.urls()));
-        saveTabsConfiguration();
+        const destination = State.list(tabsModel.get(targetTabIndex).entriesJson);
+        destination.push(record);
+        tabsModel.setProperty(targetTabIndex, "entriesJson", JSON.stringify(destination));
+        saveLaunchers();
         resetOverflowPosition();
 
         transferDialog.visible = false;
-        transferLauncherIndex = -1;
+        transferLauncherKey = "";
     }
 
     ListModel {
@@ -462,12 +493,37 @@ PlasmoidItem {
     ListModel {
         id: launcherModel
 
-        function load(urls) {
+        function load(records) {
             clear();
-            for (let i = 0; i < urls.length; ++i) {
-                append({ launcherUrl: urls[i].toString() });
+            if (records.length) {
+                append(records);
             }
             Qt.callLater(root.rebuildOverflowModel);
+        }
+
+        function recordAt(index) {
+            const item = get(index);
+            return { launcherKey: item.launcherKey, launcherUrl: item.launcherUrl,
+                     customName: item.customName, customIcon: item.customIcon };
+        }
+
+        function records() {
+            const result = [];
+            for (let i = 0; i < count; ++i) {
+                result.push(recordAt(i));
+            }
+            return result;
+        }
+
+        function indexOfKey(key) {
+            if (key) {
+                for (let i = 0; i < count; ++i) {
+                    if (get(i).launcherKey === key) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
         }
 
         function urls() {
@@ -485,7 +541,7 @@ PlasmoidItem {
                 if (value.length === 0) {
                     continue;
                 }
-                insert(at, { launcherUrl: value });
+                insert(at, State.launcher(value, root.makeKey));
                 ++at;
             }
             Qt.callLater(root.rebuildOverflowModel);
@@ -505,6 +561,7 @@ PlasmoidItem {
         if (tabsEnabled) {
             storeCurrentTabLaunchers();
         } else {
+            saveSingleDetails();
             Plasmoid.configuration.launcherUrls = launcherModel.urls();
         }
         Qt.callLater(rebuildOverflowModel);
@@ -523,12 +580,54 @@ PlasmoidItem {
         return true;
     }
 
+    function editLauncher(key) {
+        const index = launcherModel.indexOfKey(key);
+        if (index < 0 || Plasmoid.immutable) {
+            return;
+        }
+        const launcher = launcherModel.get(index);
+        overflowDialog.visible = false;
+        launcherBridge.closeIconPicker();
+        appearanceDialog.editKey = key;
+        customTitle.text = launcher.customName;
+        appearanceDialog.chosenIcon = launcher.customIcon;
+        appearanceDialog.visible = true;
+        customTitle.forceActiveFocus();
+    }
+
+    function saveAppearance() {
+        if (dragging) {
+            return;
+        }
+        const index = launcherModel.indexOfKey(appearanceDialog.editKey);
+        if (index >= 0 && !Plasmoid.immutable) {
+            launcherModel.setProperty(index, "customName", customTitle.text.trim());
+            launcherModel.setProperty(index, "customIcon", appearanceDialog.chosenIcon);
+            saveLaunchers();
+        }
+        appearanceDialog.visible = false;
+    }
+
     function removeLauncher(index) {
         if (index < 0 || index >= launcherModel.count) {
             return;
         }
+        if (launcherModel.get(index).launcherKey === appearanceDialog.editKey) {
+            appearanceDialog.visible = false;
+        }
         launcherModel.remove(index, 1);
         saveLaunchers();
+    }
+
+    function rollbackDrag() {
+        if (internalDragIndex >= 0 && internalDragOriginalIndex >= 0
+                && internalDragIndex !== internalDragOriginalIndex) {
+            launcherModel.move(internalDragIndex, internalDragOriginalIndex, 1);
+        }
+        dragging = false;
+        internalDragIndex = -1;
+        internalDragOriginalIndex = -1;
+        Qt.callLater(rebuildOverflowModel);
     }
 
     function calculatedIndex(eventX, eventY, allowEnd) {
@@ -585,9 +684,9 @@ PlasmoidItem {
             }
         }
 
-        GridView {
-            id: grid
-
+        Item {
+            id: gridFrame
+            clip: true
             x: root.launcherX + (root.horizontalLayout
                 ? root.leadingReserve + root.primaryAlignmentOffset
                 : root.crossAlignmentOffset)
@@ -597,121 +696,145 @@ PlasmoidItem {
             width: root.horizontalLayout ? root.alignedGridPrimaryExtent : root.crossGridExtent
             height: root.horizontalLayout ? root.crossGridExtent : root.alignedGridPrimaryExtent
 
-            interactive: root.overflowMode === 2
-            clip: true
-            boundsBehavior: Flickable.StopAtBounds
-            flickableDirection: root.horizontalLayout ? Flickable.HorizontalFlick : Flickable.VerticalFlick
-            flow: root.horizontalLayout ? GridView.FlowTopToBottom : GridView.FlowLeftToRight
+            GridView {
+                id: grid
+                width: gridFrame.width + (root.horizontalLayout ? 0 : root.horizontalSpacing)
+                height: gridFrame.height + (root.horizontalLayout ? root.verticalSpacing : 0)
+                interactive: root.overflowMode === 2
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                flickableDirection: root.horizontalLayout ? Flickable.HorizontalFlick : Flickable.VerticalFlick
+                flow: root.horizontalLayout ? GridView.FlowTopToBottom : GridView.FlowLeftToRight
 
-            QQC2.ScrollIndicator.horizontal: QQC2.ScrollIndicator {
-                visible: root.overflowMode === 2 && root.hasOverflow && root.horizontalLayout
-                active: visible
-                opacity: grid.moving ? 1.0 : 0.55
-            }
+                QQC2.ScrollIndicator.horizontal: QQC2.ScrollIndicator {
+                    parent: gridFrame
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    visible: root.overflowMode === 2 && root.hasOverflow && root.horizontalLayout
+                    active: visible
+                    opacity: grid.moving ? 1.0 : 0.55
+                }
 
-            QQC2.ScrollIndicator.vertical: QQC2.ScrollIndicator {
-                visible: root.overflowMode === 2 && root.hasOverflow && !root.horizontalLayout
-                active: visible
-                opacity: grid.moving ? 1.0 : 0.55
-            }
-            cellWidth: root.cellWidth
-            cellHeight: root.cellHeight
-            model: launcherModel
+                QQC2.ScrollIndicator.vertical: QQC2.ScrollIndicator {
+                    parent: gridFrame
+                    anchors.top: parent.top
+                    anchors.bottom: parent.bottom
+                    anchors.right: parent.right
+                    visible: root.overflowMode === 2 && root.hasOverflow && !root.horizontalLayout
+                    active: visible
+                    opacity: grid.moving ? 1.0 : 0.55
+                }
+                cellWidth: root.cellWidth
+                cellHeight: root.cellHeight
+                model: launcherModel
 
-            delegate: Item {
-                id: launcherItem
-                required property int index
-                required property string launcherUrl
+                delegate: Item {
+                    id: launcherItem
+                    required property int index
+                    required property string launcherUrl
+                    required property string launcherKey
+                    required property string customName
+                    required property string customIcon
 
-                readonly property bool appCouplingLauncher: true
-                readonly property var appCouplingRoot: root
+                    readonly property bool appCouplingLauncher: true
+                    readonly property var appCouplingRoot: root
 
-                width: root.requestedIconSize
-                height: root.requestedIconSize
+                    width: root.showLabels ? Math.min(root.tileWidth, gridFrame.width) : root.tileWidth
+                    height: root.showLabels ? Math.min(root.tileHeight, gridFrame.height) : root.tileHeight
 
-                readonly property var info: launcherBridge.launcherData(launcherUrl)
-                readonly property string displayName: info.applicationName || launcherUrl
-                readonly property string iconName: info.iconName || "system-run"
+                    readonly property var info: launcherBridge.launcherData(launcherUrl)
+                    readonly property string displayName: customName || info.applicationName || launcherUrl
+                    readonly property string iconName: customIcon || info.iconName || "system-run"
 
-                DragAndDrop.DragArea {
-                    anchors.fill: parent
-                    enabled: !Plasmoid.immutable
-                    defaultAction: Qt.MoveAction
-                    supportedActions: Qt.IgnoreAction | Qt.MoveAction | Qt.CopyAction
-                    delegate: appIcon
-                    source: launcherItem
-
-                    mimeData {
-                        url: launcherItem.launcherUrl
-                        source: launcherItem
-                    }
-
-                    MouseArea {
-                        id: mouseArea
+                    DragAndDrop.DragArea {
                         anchors.fill: parent
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        hoverEnabled: true
+                        enabled: !Plasmoid.immutable
+                        defaultAction: Qt.MoveAction
+                        supportedActions: Qt.IgnoreAction | Qt.MoveAction | Qt.CopyAction
+                        delegate: face.dragIcon
+                        source: launcherItem
 
-                        onClicked: mouse => {
-                            if (mouse.button === Qt.LeftButton) {
-                                launcherBridge.openUrl(launcherItem.launcherUrl);
-                            } else if (mouse.button === Qt.RightButton) {
-                                itemMenu.open(mouse.x, mouse.y);
-                            }
+                        mimeData {
+                            url: launcherItem.launcherUrl
+                            source: launcherItem
                         }
 
-                        Kirigami.Icon {
-                            id: appIcon
-                            anchors.centerIn: parent
-                            width: root.effectiveIconSize
-                            height: width
-                            source: launcherItem.iconName
-                            active: mouseArea.containsMouse || launcherItem.index === root.internalDragIndex
-                        }
-
-                        PlasmaCore.ToolTipArea {
+                        MouseArea {
+                            id: mouseArea
                             anchors.fill: parent
-                            mainText: launcherItem.displayName
-                            subText: launcherItem.info.genericName || ""
-                            icon: launcherItem.iconName
-                        }
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            hoverEnabled: true
 
-                        PlasmaExtras.Menu {
-                            id: itemMenu
-                            visualParent: mouseArea
-
-                            PlasmaExtras.MenuItem {
-                                text: i18n("Remove Launcher")
-                                icon: "list-remove"
-                                onClicked: root.removeLauncher(launcherItem.index)
+                            onClicked: mouse => {
+                                if (mouse.button === Qt.LeftButton) {
+                                    launcherBridge.openUrl(launcherItem.launcherUrl);
+                                } else if (mouse.button === Qt.RightButton) {
+                                    itemMenu.open(mouse.x, mouse.y);
+                                }
                             }
 
-                            PlasmaExtras.MenuItem {
-                                text: i18n("Add Launcher…")
-                                icon: "list-add"
-                                onClicked: launcherBridge.addLauncher()
+                            LauncherFace {
+                                id: face
+                                anchors.fill: parent
+                                name: launcherItem.displayName
+                                iconName: launcherItem.iconName
+                                iconSize: root.requestedIconSize
+                                showName: root.showLabels
+                                highlighted: mouseArea.containsMouse || launcherItem.index === root.internalDragIndex
                             }
 
-                            PlasmaExtras.MenuItem {
-                                text: i18n("Move to Tab…")
-                                icon: "go-jump"
-                                visible: root.tabsEnabled && tabsModel.count > 1
-                                onClicked: root.beginLauncherTransfer(launcherItem.index, false)
+                            PlasmaCore.ToolTipArea {
+                                anchors.fill: parent
+                                mainText: launcherItem.displayName
+                                subText: launcherItem.info.genericName || ""
+                                icon: face.iconSource
                             }
 
-                            PlasmaExtras.MenuItem {
-                                text: i18n("Copy to Tab…")
-                                icon: "edit-copy"
-                                visible: root.tabsEnabled && tabsModel.count > 1
-                                onClicked: root.beginLauncherTransfer(launcherItem.index, true)
-                            }
+                            PlasmaExtras.Menu {
+                                id: itemMenu
+                                visualParent: mouseArea
 
-                            PlasmaExtras.MenuItem {
-                                separator: true
-                            }
+                                PlasmaExtras.MenuItem {
+                                    text: i18n("Edit appearance…")
+                                    icon: "document-edit"
+                                    enabled: !Plasmoid.immutable
+                                    onClicked: root.editLauncher(launcherItem.launcherKey)
+                                }
 
-                            PlasmaExtras.MenuItem {
-                                action: Plasmoid.internalAction("configure")
+                                PlasmaExtras.MenuItem {
+                                    text: i18n("Remove Launcher")
+                                    icon: "list-remove"
+                                    onClicked: root.removeLauncher(launcherItem.index)
+                                }
+
+                                PlasmaExtras.MenuItem {
+                                    text: i18n("Add Launcher…")
+                                    icon: "list-add"
+                                    onClicked: launcherBridge.addLauncher()
+                                }
+
+                                PlasmaExtras.MenuItem {
+                                    text: i18n("Move to Tab…")
+                                    icon: "go-jump"
+                                    visible: root.tabsEnabled && tabsModel.count > 1
+                                    onClicked: root.beginLauncherTransfer(launcherItem.index, false)
+                                }
+
+                                PlasmaExtras.MenuItem {
+                                    text: i18n("Copy to Tab…")
+                                    icon: "edit-copy"
+                                    visible: root.tabsEnabled && tabsModel.count > 1
+                                    onClicked: root.beginLauncherTransfer(launcherItem.index, true)
+                                }
+
+                                PlasmaExtras.MenuItem {
+                                    separator: true
+                                }
+
+                                PlasmaExtras.MenuItem {
+                                    action: Plasmoid.internalAction("configure")
+                                }
                             }
                         }
                     }
@@ -817,8 +940,12 @@ PlasmoidItem {
                 anchors.fill: parent
                 hoverEnabled: true
                 onClicked: {
-                    root.rebuildOverflowModel();
-                    overflowDialog.visible = !overflowDialog.visible;
+                    if (overflowDialog.visible) {
+                        overflowDialog.visible = false;
+                    } else {
+                        root.rebuildOverflowModel(true);
+                        overflowDialog.visible = overflowModel.count > 0;
+                    }
                 }
             }
 
@@ -919,6 +1046,7 @@ PlasmoidItem {
                            Kirigami.Theme.textColor.b, 0.035)
 
             ListView {
+                id: tabStripView
                 anchors.fill: parent
                 orientation: root.tabStripVertical ? ListView.Vertical : ListView.Horizontal
                 spacing: 2
@@ -950,7 +1078,6 @@ PlasmoidItem {
                     id: tabDelegate
                     required property int index
                     required property string name
-                    required property string launcherUrlsJson
 
                     width: root.tabStripVertical
                         ? root.tabStripThickness
@@ -1062,9 +1189,22 @@ PlasmoidItem {
                         }
 
                         PlasmaExtras.MenuItem {
+                            separator: true
+                        }
+
+                        PlasmaExtras.MenuItem {
                             action: Plasmoid.internalAction("remove")
                         }
                     }
+                }
+            }
+
+            TabWheelArea {
+                anchors.fill: parent
+                onStepRequested: offset => {
+                    const next = Math.max(0, Math.min(tabsModel.count - 1, root.activeTab + offset));
+                    root.switchTab(next);
+                    tabStripView.positionViewAtIndex(root.activeTab, ListView.Contain);
                 }
             }
         }
@@ -1093,14 +1233,23 @@ PlasmoidItem {
         backgroundHints: PlasmaCore.Dialog.StandardBackground
         visible: false
 
+        onVisibleChanged: {
+            if (!visible) {
+                overflowModel.clear();
+            }
+        }
+
         mainItem: Item {
             readonly property int popupColumns: Math.max(1, Math.min(6, overflowModel.count))
             readonly property int popupRows: Math.max(1, Math.min(6, Math.ceil(overflowModel.count / popupColumns)))
-            width: root.extentForSlots(popupColumns, root.horizontalSpacing)
-            height: root.extentForSlots(popupRows, root.verticalSpacing)
+            width: root.extentForSlots(popupColumns, root.horizontalSpacing, root.tileWidth)
+            height: root.extentForSlots(popupRows, root.verticalSpacing, root.tileHeight)
+
+            clip: true
 
             GridView {
-                anchors.fill: parent
+                width: parent.width + root.horizontalSpacing
+                height: parent.height
                 clip: true
                 interactive: contentHeight > height
                 cellWidth: root.cellWidth
@@ -1108,15 +1257,18 @@ PlasmoidItem {
                 model: overflowModel
 
                 delegate: Item {
+                    id: popupLauncher
                     required property int index
                     required property string launcherUrl
-                    required property int sourceIndex
-                    width: root.requestedIconSize
-                    height: root.requestedIconSize
+                    required property string launcherKey
+                    required property string customName
+                    required property string customIcon
+                    width: root.tileWidth
+                    height: root.tileHeight
 
                     readonly property var info: launcherBridge.launcherData(launcherUrl)
-                    readonly property string displayName: info.applicationName || launcherUrl
-                    readonly property string iconName: info.iconName || "system-run"
+                    readonly property string displayName: customName || info.applicationName || launcherUrl
+                    readonly property string iconName: customIcon || info.iconName || "system-run"
 
                     MouseArea {
                         id: popupMouse
@@ -1132,19 +1284,21 @@ PlasmoidItem {
                             }
                         }
 
-                        Kirigami.Icon {
-                            anchors.centerIn: parent
-                            width: root.requestedIconSize
-                            height: width
-                            source: iconName
-                            active: popupMouse.containsMouse
+                        LauncherFace {
+                            id: popupFace
+                            anchors.fill: parent
+                            name: popupLauncher.displayName
+                            iconName: popupLauncher.iconName
+                            iconSize: root.requestedIconSize
+                            showName: root.showLabels
+                            highlighted: popupMouse.containsMouse
                         }
 
                         PlasmaCore.ToolTipArea {
                             anchors.fill: parent
                             mainText: displayName
                             subText: info.genericName || ""
-                            icon: iconName
+                            icon: popupFace.iconSource
                         }
 
                         PlasmaExtras.Menu {
@@ -1152,9 +1306,16 @@ PlasmoidItem {
                             visualParent: popupMouse
 
                             PlasmaExtras.MenuItem {
+                                text: i18n("Edit appearance…")
+                                icon: "document-edit"
+                                enabled: !Plasmoid.immutable
+                                onClicked: root.editLauncher(popupLauncher.launcherKey)
+                            }
+
+                            PlasmaExtras.MenuItem {
                                 text: i18n("Remove Launcher")
                                 icon: "list-remove"
-                                onClicked: root.removeLauncher(sourceIndex)
+                                onClicked: root.removeLauncher(launcherModel.indexOfKey(launcherKey))
                             }
 
                             PlasmaExtras.MenuItem {
@@ -1162,6 +1323,7 @@ PlasmoidItem {
                                 icon: "go-jump"
                                 visible: root.tabsEnabled && tabsModel.count > 1
                                 onClicked: {
+                                    const sourceIndex = launcherModel.indexOfKey(popupLauncher.launcherKey);
                                     overflowDialog.visible = false;
                                     root.beginLauncherTransfer(sourceIndex, false);
                                 }
@@ -1172,12 +1334,108 @@ PlasmoidItem {
                                 icon: "edit-copy"
                                 visible: root.tabsEnabled && tabsModel.count > 1
                                 onClicked: {
+                                    const sourceIndex = launcherModel.indexOfKey(popupLauncher.launcherKey);
                                     overflowDialog.visible = false;
                                     root.beginLauncherTransfer(sourceIndex, true);
                                 }
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    PlasmaCore.Dialog {
+        id: appearanceDialog
+        property string editKey: ""
+        property string chosenIcon: ""
+        visualParent: root
+        location: Plasmoid.location
+        type: PlasmaCore.Dialog.PopupMenu
+        hideOnWindowDeactivate: false
+        backgroundHints: PlasmaCore.Dialog.StandardBackground
+        visible: false
+
+        onVisibleChanged: {
+            if (!visible) {
+                editKey = "";
+                launcherBridge.closeIconPicker();
+            }
+        }
+
+        mainItem: ColumnLayout {
+            width: 320
+            spacing: 8
+
+            QQC2.Label {
+                text: i18n("Launcher appearance")
+                font.bold: true
+            }
+
+            QQC2.TextField {
+                id: customTitle
+                Layout.fillWidth: true
+                placeholderText: i18n("Name (blank uses the application name)")
+                Accessible.name: i18n("Launcher name")
+                Keys.onReturnPressed: event => event.accepted = true
+                Keys.onEnterPressed: event => event.accepted = true
+                Keys.onEscapePressed: appearanceDialog.visible = false
+            }
+
+            RowLayout {
+                Kirigami.Icon {
+                    Layout.preferredWidth: 24
+                    Layout.preferredHeight: 24
+                    source: appearanceDialog.chosenIcon.startsWith("file:")
+                        ? Qt.resolvedUrl(appearanceDialog.chosenIcon)
+                        : appearanceDialog.chosenIcon || "system-run"
+                }
+
+                QQC2.Label {
+                    Layout.fillWidth: true
+                    text: appearanceDialog.chosenIcon || i18n("Application icon")
+                    textFormat: Text.PlainText
+                    elide: Text.ElideMiddle
+                }
+            }
+
+            Flow {
+                Layout.fillWidth: true
+                Layout.preferredHeight: childrenRect.height
+                spacing: 4
+
+                QQC2.Button {
+                    text: i18n("System icons…")
+                    onClicked: launcherBridge.chooseIcon(false)
+                }
+
+                QQC2.Button {
+                    text: i18n("Image file…")
+                    onClicked: launcherBridge.chooseIcon(true)
+                }
+
+                QQC2.Button {
+                    text: i18n("Reset icon")
+                    enabled: appearanceDialog.chosenIcon.length > 0
+                    onClicked: {
+                        launcherBridge.closeIconPicker();
+                        appearanceDialog.chosenIcon = "";
+                    }
+                }
+            }
+
+            RowLayout {
+                Layout.alignment: Qt.AlignRight
+
+                QQC2.Button {
+                    text: i18n("Cancel")
+                    onClicked: appearanceDialog.visible = false
+                }
+
+                QQC2.Button {
+                    text: i18n("Save")
+                    onClicked: root.saveAppearance()
                 }
             }
         }
@@ -1194,7 +1452,7 @@ PlasmoidItem {
 
         onVisibleChanged: {
             if (!visible) {
-                root.transferLauncherIndex = -1;
+                root.transferLauncherKey = "";
             }
         }
 
@@ -1210,18 +1468,23 @@ PlasmoidItem {
                 font.bold: true
             }
 
-            Repeater {
+            ListView {
+                id: destinations
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.min(6, Math.max(1, tabsModel.count - 1)) * 36
+                clip: true
                 model: tabsModel
+                QQC2.ScrollBar.vertical: QQC2.ScrollBar { id: transferScroll }
 
-                QQC2.ItemDelegate {
+                delegate: QQC2.ItemDelegate {
                     required property int index
                     required property string name
 
-                    Layout.fillWidth: true
+                    width: destinations.width - (tabsModel.count > 7 ? transferScroll.width : 0)
+                    height: visible ? 36 : 0
                     visible: index !== root.activeTab
-                    enabled: visible
                     text: name
-                    icon.name: index === root.activeTab ? "emblem-default" : "tab-new"
+                    icon.name: "tab-new"
                     onClicked: root.transferLauncherToTab(index)
                 }
             }
@@ -1247,7 +1510,7 @@ PlasmoidItem {
 
         onVisibleChanged: {
             if (!visible) {
-                root.renameTabIndex = -1;
+                root.renameTabKey = "";
             }
         }
 
@@ -1315,7 +1578,8 @@ PlasmoidItem {
             root.internalDragOriginalIndex = -1;
 
             const sourceItem = event.mimeData.source;
-            if (sourceItem && sourceItem.appCouplingLauncher === true && sourceItem.appCouplingRoot === root) {
+            if (sourceItem && sourceItem.appCouplingLauncher === true && sourceItem.appCouplingRoot === root
+                    && sourceItem.index >= 0 && sourceItem.index < launcherModel.count) {
                 root.internalDragIndex = sourceItem.index;
                 root.internalDragOriginalIndex = sourceItem.index;
             }
@@ -1333,17 +1597,7 @@ PlasmoidItem {
             }
         }
 
-        onDragLeave: {
-            root.dragging = false;
-            if (root.internalDragIndex >= 0 &&
-                root.internalDragOriginalIndex >= 0 &&
-                root.internalDragIndex !== root.internalDragOriginalIndex) {
-                launcherModel.move(root.internalDragIndex, root.internalDragOriginalIndex, 1);
-            }
-            root.internalDragIndex = -1;
-            root.internalDragOriginalIndex = -1;
-            Qt.callLater(root.rebuildOverflowModel);
-        }
+        onDragLeave: root.rollbackDrag()
 
         onDrop: event => {
             root.dragging = false;
@@ -1365,6 +1619,12 @@ PlasmoidItem {
 
     LauncherBridge {
         id: launcherBridge
+
+        onIconChosen: icon => {
+            if (appearanceDialog.visible) {
+                appearanceDialog.chosenIcon = icon;
+            }
+        }
 
         onLauncherAdded: url => {
             launcherModel.insertUrls(launcherModel.count, [url]);
@@ -1391,7 +1651,7 @@ PlasmoidItem {
 
         function onLauncherUrlsChanged() {
             if (!root.tabsEnabled && !root.dragging && !root.configuredLaunchersMatchModel()) {
-                launcherModel.load(Plasmoid.configuration.launcherUrls);
+                root.loadSingleList();
             }
         }
 
@@ -1401,15 +1661,22 @@ PlasmoidItem {
         }
 
         function onEnableTabsChanged() {
+            if (root.dragging) {
+                root.rollbackDrag();
+            }
+            appearanceDialog.visible = false;
+            transferDialog.visible = false;
+            renameDialog.visible = false;
             if (root.tabsEnabled) {
                 root.loadTabs();
                 root.loadActiveTabLaunchers();
             } else {
                 if (tabsModel.count > 0) {
-                    root.storeCurrentTabLaunchers();
+                    root.saveSingleDetails();
                     Plasmoid.configuration.launcherUrls = launcherModel.urls();
                 }
-                launcherModel.load(Plasmoid.configuration.launcherUrls);
+                root.displayedTabKey = "";
+                root.loadSingleList();
                 root.resetOverflowPosition();
             }
         }
@@ -1429,7 +1696,7 @@ PlasmoidItem {
         } else {
             // Do not seed tabsJson until tabs are actually enabled. This keeps
             // the first tab migration based on the latest single-list launchers.
-            launcherModel.load(Plasmoid.configuration.launcherUrls);
+            root.loadSingleList();
         }
     }
 }
